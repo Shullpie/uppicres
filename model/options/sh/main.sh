@@ -1,0 +1,1 @@
+python model/run.py -options ./model/options/configs/main_config.yml

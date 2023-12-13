@@ -1,0 +1,98 @@
+# optimizers:
+# "adam": [lr, beta1=0.9, beta2=0.99, weight_decay=0, amsgrad=False] https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam
+# "adamw": [lr, beta1=0.9, beta2=0.99, weight_decay=0, amsgrad=False] https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html#torch.optim.AdamW
+# "sgd": [lr, momentum=0, weight_decay=0, nesterov=False, dampening=0] https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD  
+
+# schedulers
+#"LinearLR": [end_factor] https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.LinearLR.html#torch.optim.lr_scheduler.LinearLR
+# "ReduceLROnPlateau": [factor=0.1, patience=10, threshold=1e-4, threshold_mode="rel", cooldown=0, eps=1e-8] https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
+# "MultiStepLR": [gamma, milestones] https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.MultiStepLR.html#torch.optim.lr_scheduler.MultiStepLR
+# "ExponentialLR": [gamma] https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ExponentialLR.html#torch.optim.lr_scheduler.ExponentialLR
+
+name: uppicres_main
+device: cuda
+random_seed: 0
+w: 1024
+h: 1024
+n_img_channels: 3
+n_mask_channels: 1 
+
+#------Data------#
+dataset:
+  seg_dataset:
+    task: "seg"
+
+    #Dataloader params
+    dataloader:
+      batch_size: 4
+      shuffle: false
+      # num_workers: 2
+      pin_memory: false
+      drop_last: false
+
+    train:
+      imgs_path: "model/data/datasets/seg_damage_data/train/images/" 
+      masks_path: "model/data/datasets/seg_damage_data/train/masks/"
+      #-----transforms-----#
+      transforms: 
+      # [GrayScale, ColorJitter, RandomHorizontalFlip, RandomPosterize, 
+      # RandomAdjustSharpness, RandomVerticalFlip, RandomEqualize]
+        ColorJitter:
+          p: .15
+          brightness: [.1, .2, .3, .4]
+          contrast: [.1, .2, .3, .4]
+          saturation: [.1, .2, .3, .4]
+          hue: [.0, .1]
+
+        RandomPosterize:
+          p: .1
+          bits: [4, 8]
+        
+        RandomAdjustSharpness:
+          p: .1
+          sharpness_factor: [4, 6, 8, 10]
+
+        RandomEqualize:
+          p: .1
+
+        Grayscale:
+          p: .1
+          num_output_channels: 3
+
+        RandomHorizontalFlip:
+          p: .3
+
+        RandomVerticalFlip:
+          p: .3
+
+    test:
+      imgs_path: "model/data/datasets/seg_damage_data/test/images/"
+      masks_path: "model/data/datasets/seg_damage_data/test/masks/"
+  
+  clear_damage_dataset:
+    train: "some path"
+    test: "some path"
+
+nns:
+  seg: #[BatchSegUnet]
+    batch_seg_unet:
+      in_channels: 3 # DO NOT CHANGE!
+      out_channels: 1 # DO NOT CHANGE!
+      activation_function: "gelu"  # [relu, gelu]
+      metrics: [] # [accuracy, iou, dise] 
+      loss_fn: # BCE - BinaryCrossEntropyLoss 
+        alpha: 0.1
+
+      optimizer: 
+        name: adam
+        lr: 1e-3
+      
+      scheduler:
+        scheme: ReduceLROnPlateau
+        lr: 1e-3
+        factor: .1
+        patience: 10
+        threshold: 1e-3
+        eps: 1e-9
+
+

@@ -1,10 +1,10 @@
 from torch.optim import lr_scheduler
 
+
 def get_scheduler(optimizer, option_scheduler: dict, total_iters: int):
     scheme = option_scheduler.get('scheme', None)
     if scheme is None:
-        raise NotImplementedError(
-            'Scheduler is None. Please, add to config file')
+        raise NotImplementedError('Scheduler is None. Please, add to config file')
 
     scheme = scheme.lower()
     if scheme == 'linearlr':

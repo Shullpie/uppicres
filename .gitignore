@@ -1,5 +1,5 @@
 venv
-model/data/datasets
 test.ipynb
+/data
 uppicres.code-workspace
 **/__pycache__

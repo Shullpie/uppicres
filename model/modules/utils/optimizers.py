@@ -1,7 +1,8 @@
 import torch
+from torch.optim import Optimizer
 
 
-def get_optimizer(model_params, option_optimizer: dict):
+def get_optimizer(model_params: torch.Tensor, option_optimizer: dict) -> Optimizer:
     name = option_optimizer.get('name', None)
     if name is None:
         raise NotImplementedError(

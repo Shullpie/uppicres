@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 
+
 class BaseModel(pl.LightningModule):
     def __init__(self, model, optimizer, scheduler, loss_func, metrics_funcs=None):
         super().__init__()
@@ -42,4 +43,3 @@ class BaseModel(pl.LightningModule):
         
 
         
-

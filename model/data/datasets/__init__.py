@@ -6,8 +6,9 @@ class Datasets(NamedTuple):
     train_set: Dataset
     test_set: Dataset
 
-def create_dataset(dataset_option: dict) -> Datasets:
-    task = dataset_option["task"]
+
+def create_datasets(main_options: dict) -> Datasets:
+    task = main_options["task"]
     if task == "seg":
         from .seg_dataset import SegDataSet as DS
     elif task == "clear":
@@ -15,9 +16,9 @@ def create_dataset(dataset_option: dict) -> Datasets:
     else: 
         raise NotImplementedError(f"Task {task} is not recognized.")
 
-    train_set = DS(dataset_type_options=dataset_option['datasets'][f'{task}_dataset']['train'], 
-                   crop=dataset_option['datasets'][f'{task}_dataset']['crop'])
-    test_set = DS(dataset_option['datasets'][f'{task}_dataset']["test"],
-                  crop=dataset_option['datasets'][f'{task}_dataset']['crop'])
+    train_set = DS(dataset_type_options=main_options['datasets'][f'{task}_dataset']['train'], 
+                   crop=main_options['crop'])
+    test_set = DS(main_options['datasets'][f'{task}_dataset']["test"],
+                  crop=main_options['crop'])
 
     return Datasets(train_set, test_set)

@@ -2,10 +2,8 @@ import torch
 from torchvision.transforms import Resize, CenterCrop
 from torchvision.transforms.functional import crop
 
-Img = torch.Tensor
 
-
-def crop_into_nxn(img: Img, n: int) -> torch.Tensor:
+def crop_into_nxn(img: torch.Tensor, n: int) -> torch.Tensor:
     _, img_h, img_w = img.shape
     if (img_h % n != 0) or (img_w % n != 0):
         raise ValueError(f'The image side is not divisible by n={n}. h={img_h}, w={img_w}.')
@@ -17,7 +15,7 @@ def crop_into_nxn(img: Img, n: int) -> torch.Tensor:
     return torch.stack(patches)
 
 
-def resize_multiples_n(img: Img, n: int) -> Img:
+def resize_multiples_n(img: torch.Tensor, n: int) -> torch.Tensor:
     _, img_h, img_w = img.shape
     if (img_w % n == 0) and (img_h % n == 0): 
         return img

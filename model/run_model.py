@@ -1,8 +1,14 @@
 import argparse
 import yaml
+import torch
+from modules.base_model import Trainer
 from data.dataloaders import dataloaders
-from modules.metrics import get_loss_func, get_metrics
-from data.visualization import show_batch
+from data.datasets.seg_dataset import SegDataSet
+from data.visualization import show_image
+from PIL import Image
+import torchvision.transforms as T
+from data.processing.functional import crop_into_nxn
+import time
 
 def main():
     parser = argparse.ArgumentParser()
@@ -13,14 +19,28 @@ def main():
     with open(option_path, 'r') as file_option:
         options = yaml.safe_load(file_option)
 
-    train_loader, _ = dataloaders.create_dataloaders(options)
-    metrics = get_metrics(options['nns']['seg']['metrics'])
-    lf = get_loss_func(options['nns']['seg']['loss_fn'])
+    d = SegDataSet(options['datasets']['seg_dataset']['train'], crop=0)
+    img = d[0][0]
+    print(len(d.images))
+    print(isinstance(img, Image.Image))
+    show_image(d[0][0])
+
     
-    print(metrics)
-    print(lf)
-    print(len(train_loader))
-    show_batch(next(iter(train_loader)))
+        # a = Trainer()
+    # a.init_from_config(options)
+    # print(a.train_loader.dataset.transforms_list)
+    # train_loader, _ = dataloaders.create_dataloaders(options)
+    # a.init_from_config(options=options)
+    # a._check_attrs()
+    # # print(a.is_cropped)
+    # # print(a.metrics_dict)
+    
+    # i = iter(train_loader)
+    # batch = next(i)
+    # inputs, target = batch
+    # print(a.model(inputs).shape)
+        
+    
 
 
 if __name__=="__main__":

@@ -9,27 +9,38 @@
 # "MultiStepLR": [gamma, milestones] https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.MultiStepLR.html#torch.optim.lr_scheduler.MultiStepLR
 # "ExponentialLR": [gamma] https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ExponentialLR.html#torch.optim.lr_scheduler.ExponentialLR
 
-name: uppicres
-task: seg
-nn_model: ____ #TODO Select nn
-device: cuda
-random_seed: 0
-w: 1024
-h: 1024
-n_img_channels: 3
-n_mask_channels: 1 
+# transforms
+# -
 
+
+name: uppicres
+
+# [seg, clr]
+task: seg
+
+# [SegUnet, ]
+nn_model: SegUnet
+
+# [cpu, cuda|cuda:0]
+device: cuda
+
+# [0-disable, 256, 512, 1024]
+crop: 0
+
+epoch: 100
+# [0-disable, n]
+transform_data_every_n_epoch: 10
 #------Data------#
 
 datasets:
   seg_dataset:
-    crop: 0
+
     #Dataloader params
     dataloader:
       train:
-        batch_size: 4
-        shuffle: true
-        # num_workers: 2
+        batch_size: 1
+        shuffle: false
+        # num_workers: 2 #TODO Must be
         pin_memory: false
         drop_last: false
 
@@ -42,11 +53,14 @@ datasets:
       imgs_path: "data/seg_damage_data/train/images/" 
       masks_path: "data/seg_damage_data/train/masks/"
 
-      transforms: 
+      # [true, false]
+      load_to_ram: true
+
       # [GrayScale, ColorJitter, RandomHorizontalFlip, RandomPosterize, 
       # RandomAdjustSharpness, RandomVerticalFlip, RandomEqualize]
+      transforms: 
         colorjitter:
-          p: .3
+          p: .6
           brightness: [.1, .2, .3, .4]
           contrast: [.1, .2, .3, .4]
           saturation: [.1, .2, .3, .4]
@@ -76,9 +90,11 @@ datasets:
     test:
       imgs_path: "data/seg_damage_data/test/images/"
       masks_path: "data/seg_damage_data/test/masks/"
+
+      # [ture, false]
+      load_to_ram: true
   
   clear_damage_dataset:
-    crop: 0
     train: "some path"
     test: "some path"
 
@@ -88,25 +104,27 @@ nns:
     metrics: [bacc, broc-auc, dice] 
 
     # [bce]
-    loss_fn:
+    criterion:
       bce: 
         pos_weight: [2]
-      
-    batch_seg_unet:
-      in_channels: 3 # DO NOT CHANGE!
-      out_channels: 1 # DO NOT CHANGE!
-      crop: 0
-      activation_function: "gelu"  # [relu, gelu]
 
-      optimizer: 
-        name: adam
-        lr: 1e-3
+    models:
+      SegUnet:
+        in_channels: 3 # DO NOT CHANGE!
+        out_channels: 1 # DO NOT CHANGE!
+        crop: 256
+        activation_function: "gelu"  # [relu, gelu]
+
+        optimizer: 
+          name: adam
+          lr: 1e-3
+        
+        scheduler:
+          scheme: ReduceLROnPlateau
+          lr: 1e-3
+          factor: .1
+          patience: 10
+          threshold: 1e-3
+          eps: 1e-9
       
-      scheduler:
-        scheme: ReduceLROnPlateau
-        lr: 1e-3
-        factor: .1
-        patience: 10
-        threshold: 1e-3
-        eps: 1e-9
   

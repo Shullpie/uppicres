@@ -12,6 +12,9 @@
 # transforms
 # -
 
+#=| Main |================================================================================#
+# [train, inference]
+mode: train
 
 name: uppicres
 
@@ -25,20 +28,27 @@ nn_model: SegUnet
 device: cuda
 
 # [0-disable, 256, 512, 1024]
-crop: 0
+crop: 256
 
 epoch: 100
-# [0-disable, n]
-transform_data_every_n_epoch: 10
-#------Data------#
 
+# [0-disable, n]
+transform_data_every_n_epoch: 50
+
+logs_path: logs/
+
+telegram_send_logs: True
+
+
+
+#=| Data |================================================================================#
 datasets:
   seg_dataset:
 
     #Dataloader params
     dataloader:
       train:
-        batch_size: 1
+        batch_size: 4
         shuffle: false
         # num_workers: 2 #TODO Must be
         pin_memory: false
@@ -98,9 +108,11 @@ datasets:
     train: "some path"
     test: "some path"
 
+
+#=| NN's |================================================================================#
 nns:
   seg:
-    # [bacc, broc-auc, dice]
+    # [bacc, broc-auc, dice, None]
     metrics: [bacc, broc-auc, dice] 
 
     # [bce]
@@ -112,8 +124,7 @@ nns:
       SegUnet:
         in_channels: 3 # DO NOT CHANGE!
         out_channels: 1 # DO NOT CHANGE!
-        crop: 256
-        activation_function: "gelu"  # [relu, gelu]
+        activation_function: "gelu"  # [relu, gelu]  #TODO Add LeakyReLu
 
         optimizer: 
           name: adam

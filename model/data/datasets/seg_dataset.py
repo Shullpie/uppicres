@@ -5,8 +5,8 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
-from ..processing import seg_augments
-from ..processing import functional
+from model.data.processing import seg_augments
+from model.data.processing import functional
 
 
 Img: TypeAlias = torch.Tensor
@@ -14,6 +14,7 @@ Mask: TypeAlias = torch.Tensor
 
 ImgP: TypeAlias = Image.Image
 MaskP: TypeAlias = Image.Image
+
 
 class SegDataSet(Dataset):
 
@@ -29,7 +30,8 @@ class SegDataSet(Dataset):
             
         self.crop = None if crop <= 0 else crop
         if 'transforms' in dataset_type_options: 
-            self.transforms_list = seg_augments._get_transforms_list(dataset_type_options["transforms"])  # TODO Normalize
+            self.transforms_list = seg_augments._get_transforms_list(dataset_type_options["transforms"])  
+            # TODO Normalize
 
     def __getitem__(self, idx: int) -> tuple[Img, Mask]:
         if self.load_to_ram:

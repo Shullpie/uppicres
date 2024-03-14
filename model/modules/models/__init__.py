@@ -1,5 +1,4 @@
 from typing import TypeAlias
-
 import torch.nn as nn
 
 
@@ -14,7 +13,7 @@ def get_nn(options: dict) -> Network:
     
     if task == 'seg':
         if model_str == 'SegUnet':
-            from .seg_unet import SegUnet as NN
+            from model.modules.archs.seg_unet import SegUnet as NN
         else:
             raise NotImplementedError(f'NN "{model_str}" is not recognized. Check your config file.')
         

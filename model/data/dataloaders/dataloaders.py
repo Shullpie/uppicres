@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 from typing import NamedTuple
 
-from ..datasets import create_datasets
+from model.data.datasets import create_datasets
 
 
 class Dataloaders(NamedTuple):

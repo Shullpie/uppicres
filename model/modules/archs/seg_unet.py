@@ -3,7 +3,7 @@ from typing import Optional, Callable, Literal
 import torch
 import torch.nn as nn
 
-from ..utils import activation_funcs
+from model.modules.optim import activation_funcs
 
 
 class BatchDoubleConv(nn.Module):
@@ -100,7 +100,7 @@ class SegUnet(nn.Module):
         for idx in range(0, len(self.ups), 2):
             x = self.ups[idx](x)
             skip_connection = skip_connections[idx//2]
-            x = cat((skip_connection, x), dim=1)
+            x = torch.cat((skip_connection, x), dim=1)
             x = self.ups[idx+1](x)
         
         # Final

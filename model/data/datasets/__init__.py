@@ -10,7 +10,7 @@ class Datasets(NamedTuple):
 def create_datasets(main_options: dict) -> Datasets:
     task = main_options["task"]
     if task == "seg":
-        from .seg_dataset import SegDataSet as DS
+        from model.data.datasets.seg_dataset import SegDataSet as DS
     elif task == "clear":
         pass  #TODO Rewrite when clear model added
     else: 

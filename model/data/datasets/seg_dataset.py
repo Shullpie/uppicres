@@ -24,6 +24,7 @@ class SegDataSet(Dataset):
         self.transforms_list = None
 
         self.load_to_ram = dataset_type_options['load_to_ram']
+        self.normalize = dataset_type_options.get('normalize', None)
         self.images, self.masks = [], []
         if self.load_to_ram:
             self.images, self.masks = self._load_images(self.imgs_path_list, self.masks_path_list)
@@ -31,7 +32,6 @@ class SegDataSet(Dataset):
         self.crop = None if crop <= 0 else crop
         if 'transforms' in dataset_type_options: 
             self.transforms_list = seg_augments._get_transforms_list(dataset_type_options["transforms"])  
-            # TODO Normalize
 
     def __getitem__(self, idx: int) -> tuple[Img, Mask]:
         if self.load_to_ram:
@@ -42,7 +42,8 @@ class SegDataSet(Dataset):
         if self.transforms_list is not None:
             img, mask = seg_augments.apply_transforms(img=img, 
                                                       mask=mask, 
-                                                      transforms_list=self.transforms_list)
+                                                      transforms_list=self.transforms_list,
+                                                      normalize=self.normalize)
         if self.crop is not None:
             img = functional.crop_into_nxn(img=img, n=self.crop)
             mask = functional.crop_into_nxn(img=mask, n=self.crop)

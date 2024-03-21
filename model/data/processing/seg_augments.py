@@ -1,4 +1,4 @@
-from typing import Callable, NamedTuple, TypeAlias
+from typing import Callable, NamedTuple, TypeAlias, Optional
 
 import torch
 import torchvision.transforms as T
@@ -83,6 +83,7 @@ def _get_transforms_list(
 
         else:
             raise ValueError(f'Transformation "{key}" is not valid.')
+        
     return transforms_list
 
 
@@ -100,8 +101,13 @@ def _transform(img: Img, mask: Mask,
       
 
 def apply_transforms(img: Img, mask: Mask, 
-                     transforms_list: list[Transformation | PTransformation]
+                     transforms_list: list[Transformation | PTransformation],
+                     normalize: Optional[dict[str, list]]
                      ) -> tuple[Img, Mask]:
     for transformation in transforms_list:
         img, mask = _transform(img, mask, transformation)
-    return T.ToTensor()(img), T.ToTensor()(mask)
+    img = T.ToTensor()(img)
+    mask = T.ToTensor()(mask)
+    if normalize is not None:
+        img = T.Normalize(mean=normalize['mean'], std=normalize['std'])(img)
+    return img, mask

@@ -1,7 +1,14 @@
-from model.data.dataloaders import dataloaders
-from model.modules.models.seg_model import SegModel
-import torch
+def train(options):
+    task = options.get('task', None)
 
-def test(options):
-    a = SegModel(options)
-    a._save_model_state(10)
+    if task == 'seg':
+        from model.modules.models.seg_model import SegModel as M
+    
+    elif task == 'clr':
+        pass
+
+    else:
+        raise NotImplementedError(f'Task "{task}" is not recognized. Check your config file.')
+    
+    model = M(options)
+    model.fit()

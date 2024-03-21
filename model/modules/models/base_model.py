@@ -31,10 +31,10 @@ class BaseModel:
         self.optimizer = optimizers.get_optimizer(self.model.parameters(), self.nns_options.get('optimizer'))
         self.scheduler = schedulers.get_scheduler(self.optimizer, self.nns_options.get('scheduler'))
         self.transform_data_every_n_epoch = options.get('transform_data_every_n_epoch', 0)
-        self.criterion = metrics.get_criterion(options['nns'][self.task]['criterion'])
-        self.metrics_dict = metrics.get_metrics(options['nns'][self.task]['metrics'])
+        self.make_checkpoint_every_n_epoch = options.get('make_checkpoint_every_n_epoch', 0)
+        self.criterion = metrics.get_criterion(options['nns'][self.task]['criterion'], self.device)
+        self.metrics_dict = metrics.get_metrics(options['nns'][self.task]['metrics'], self.device)
         self.telegram_message = options.get('telegram_send_logs', False)
-
         self.logs_path = options.get('logs_path')
         self._check_attrs()
         self._get_trainer_info()
@@ -59,9 +59,6 @@ class BaseModel:
         if none_list:
             raise TypeError(f'Missing {len(none_list)} required argument(s): ' + ', '.join(none_list) + '.')
     
-    def _save_loss_and_metrics(self) -> None:  #TODO Do
-        pass
-    
     def _save_model_state(self, epoch: int) -> None:
         path = self.logs_path + \
             f'states/{self.model.name}_{type(self.optimizer).__name__}_{type(self.scheduler).__name__}/'
@@ -73,7 +70,7 @@ class BaseModel:
             {
                 'epoch': epoch,
                 'model_state_dict': self.model.state_dict(),
-                'opimizer_state_dict': self.optimizer.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict(),
                 'scheduler_state_dict': self.scheduler.state_dict(),
             },
             path+f'{epoch}_epoch.pt'
@@ -81,7 +78,9 @@ class BaseModel:
 
     def load_model_from_checkpoint(self, path: str) -> None:
         checkpoint = torch.load(path)
-        self.model.load_state_dict(path)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
     def _save_chart(self):
         fig = plt.figure(figsize=(10, 10))
@@ -91,24 +90,6 @@ class BaseModel:
         plt.legend(['train', 'test'])
         plt.savefig(self.logs_path + 'temp/chart.png')
 
-    @staticmethod
-    def _accumulate_metrics(total_metrics_dict: dict[str, float], 
-                            batch_metric_dict: dict[str, float]) -> dict[str, float]:
-        c_total_metrics_dict = total_metrics_dict.copy()
-        if not c_total_metrics_dict:
-            return batch_metric_dict.copy()
-        
-        for key, value in batch_metric_dict.items():
-            c_total_metrics_dict[key] += value
-        return c_total_metrics_dict
-
-    @staticmethod    
-    def _get_batch_metrics_dict(metrics: Metrics, dataset_length: int) -> Metrics:
-        c_metrics = metrics.copy()
-        for key in metrics.keys():
-            c_metrics[key] /= dataset_length
-        return c_metrics
-    
     def _send_telegram_message(self, 
                                epoch: int,
                                train_metrics_dict: Metrics,
@@ -119,7 +100,8 @@ class BaseModel:
             f'*📊Epoch {epoch}/{self.n_epoch}*\n'
             f'*🔴Train metrics:*\n_Loss: {self.train_losses[-1]}\n{train_metrics_str}_\n\n'
             f'*🟢Test metrics:*\n_Loss: {self.test_losses[-1]}\n{test_metrics_str}_\n\n'
-            '*⚙️Training params: *'  #TODO Scheduler lr,  
+            '*⚙️Training params: *' 
+            f'*LR: * {self.scheduler.get_last_lr()}'
             '%'
             r'D:\workspace\projects\uppicres\logs\temp\chart.png'
 
@@ -154,3 +136,22 @@ class BaseModel:
             f'> Scheduler: {self.scheduler}\n'
             f'Scheduler params: {self.scheduler.state_dict()}\n'
         ) 
+
+    @staticmethod
+    def _accumulate_metrics(total_metrics_dict: dict[str, float], 
+                            batch_metric_dict: dict[str, float]) -> dict[str, float]:
+        c_total_metrics_dict = total_metrics_dict.copy()
+        if not c_total_metrics_dict:
+            return batch_metric_dict.copy()
+        
+        for key, value in batch_metric_dict.items():
+            c_total_metrics_dict[key] += value
+        return c_total_metrics_dict
+
+    @staticmethod    
+    def _get_batch_metrics_dict(metrics: Metrics, dataset_length: int) -> Metrics:
+        c_metrics = metrics.copy()
+        for key in metrics.keys():
+            c_metrics[key] /= dataset_length
+        return c_metrics
+    

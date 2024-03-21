@@ -1,14 +1,18 @@
+from typing import Callable
+
 from torch.optim import lr_scheduler
+from torch.optim import Optimizer
 
 
-def get_scheduler(optimizer, option_scheduler: dict, total_iters: int):
+def get_scheduler(optimizer: Optimizer, option_scheduler: dict) -> Callable:
     scheme = option_scheduler.get('scheme', None)
     if scheme is None:
         raise NotImplementedError('Scheduler is None. Please, add to config file')
 
     scheme = scheme.lower()
     if scheme == 'linearlr':
-        end_factor = option_scheduler.get('end_factor')
+        end_factor = float(option_scheduler.get('end_factor', 1.0))
+        total_iters = option_scheduler.get('total_iters', 5)
 
         scheduler = lr_scheduler.LinearLR(
             optimizer,
@@ -35,6 +39,7 @@ def get_scheduler(optimizer, option_scheduler: dict, total_iters: int):
             cooldown=cooldown,
             eps=eps
         )
+
     elif scheme == 'multistep':
         milestones = option_scheduler.get('milestones')
         gamma = option_scheduler['gamma']
@@ -53,6 +58,7 @@ def get_scheduler(optimizer, option_scheduler: dict, total_iters: int):
             gamma=gamma,
             last_epoch=-1
         )
+        
     else:
         raise NotImplementedError(
             f'Neural Network [{scheme}] is not recognized. networks.py doesn\'t know {[scheme]}')

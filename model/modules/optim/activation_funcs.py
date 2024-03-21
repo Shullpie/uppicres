@@ -1,4 +1,4 @@
-def get_activation_function(func_name):
+def get_activation_function(func_name: str):
     if func_name == "relu":
         from torch.nn import ReLU
         return ReLU(inplace=True)

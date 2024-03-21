@@ -1,18 +1,19 @@
-from typing import Callable, NamedTuple
-from PIL.Image import Image
+from typing import Callable, NamedTuple, TypeAlias, Optional
 
-from torch import Tensor
+import torch
 import torchvision.transforms as T
 from numpy.random import choice, uniform
 
-Transformation = Callable
-Img = Image
-Mask = Image
+
+Transformation: TypeAlias = Callable
+Img: TypeAlias = torch.Tensor
+Mask: TypeAlias = torch.Tensor
+ImgOrMask: TypeAlias = torch.Tensor
 
 
 class PTransformation(NamedTuple):
     p: float
-    transformation: Transformation[[Image], Image]
+    transformation: Transformation[[ImgOrMask], ImgOrMask]
 
 
 def _get_transforms_list(
@@ -82,6 +83,7 @@ def _get_transforms_list(
 
         else:
             raise ValueError(f'Transformation "{key}" is not valid.')
+        
     return transforms_list
 
 
@@ -98,9 +100,14 @@ def _transform(img: Img, mask: Mask,
     return img, mask
       
 
-def apply_transforms(img: Tensor, mask: Tensor, 
-                     transforms_list: list[Transformation | PTransformation]
+def apply_transforms(img: Img, mask: Mask, 
+                     transforms_list: list[Transformation | PTransformation],
+                     normalize: Optional[dict[str, list]]
                      ) -> tuple[Img, Mask]:
     for transformation in transforms_list:
         img, mask = _transform(img, mask, transformation)
-    return T.ToTensor()(img), T.ToTensor()(mask)
+    img = T.ToTensor()(img)
+    mask = T.ToTensor()(mask)
+    if normalize is not None:
+        img = T.Normalize(mean=normalize['mean'], std=normalize['std'])(img)
+    return img, mask

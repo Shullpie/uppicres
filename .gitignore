@@ -1,5 +1,6 @@
-venv
-test.ipynb
-/data
 uppicres.code-workspace
+venv
+/data
+/logs
 **/__pycache__
+test.ipynb

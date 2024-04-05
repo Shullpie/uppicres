@@ -1,7 +1,7 @@
 from typing import Callable
 
 import torch
-from torch.nn import BCEWithLogitsLoss, Sigmoid
+from torch.nn import BCEWithLogitsLoss
 from torchmetrics import Dice
 from torchmetrics.classification import BinaryAccuracy, BinaryAUROC
 
@@ -32,18 +32,3 @@ def get_criterion(criterion_options: dict, device: str) -> Callable:
         raise NotImplementedError(f'criterion={criterion_options.keys()[0]} is not recognized. Check your config file.')
     
     return criterion
-
-
-def calc_metrics(prediction: torch.Tensor, 
-                 target: torch.Tensor,
-                 metrics: dict[str, Callable]) -> dict[str, float]:
-    output = {}
-    prediction = Sigmoid()(prediction)
-    target = target.to(dtype=torch.int8)
-    for label, metric in metrics.items():
-        output[label] = metric(prediction, target)
-
-    if output == {}:
-        raise NotImplementedError("metrics was not found. Check your config file.")
-    
-    return output

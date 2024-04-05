@@ -21,20 +21,19 @@ class SegModel(bm.BaseModel):
             inputs = inputs.reshape((n, c_i, img_size, img_size))
             targets = targets.reshape((n, c_t, img_size, img_size))
 
+        self.optimizer.zero_grad()
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
-        self.optimizer.zero_grad()
 
         outputs = self.model(inputs)
         loss = self.criterion(outputs, targets)
 
-        if self.metrics_dict:
-            metrics_dict = self._calc_metrics(prediction=outputs, target=targets)
-        
         loss.backward()
         self.optimizer.step()
-        self.scheduler.step(loss)
 
+        if self.metrics_dict:
+            metrics_dict = self._calc_metrics(prediction=outputs, target=targets)
+            
         return (loss.item(), metrics_dict)
 
     def train_epoch(self, epoch) -> tuple[bm.Loss, bm.Metrics]:
@@ -50,6 +49,7 @@ class SegModel(bm.BaseModel):
         for batch in tqdm(self.train_loader, desc=f'Epoch {epoch}/{self.n_epoch} - Train'):
             batch_loss, batch_metrics_dict = self.training_step(batch)
             loss_by_epoch += batch_loss
+
             if self.metrics_dict:
                 metrics_by_epoch = self._accumulate_metrics(metrics_by_epoch, batch_metrics_dict)
 
@@ -57,7 +57,8 @@ class SegModel(bm.BaseModel):
         loss_by_epoch = loss_by_epoch/dataset_lenght
         metrics_by_epoch = self._get_mean_metrics_dict(metrics_by_epoch, dataset_lenght)
         return (loss_by_epoch, metrics_by_epoch)
-
+    
+    @torch.inference_mode
     def testing_step(self, batch) -> tuple[bm.Loss, bm.Metrics]:
         metrics_dict = {}
         inputs, targets = batch
@@ -75,7 +76,6 @@ class SegModel(bm.BaseModel):
 
         outputs = self.model(inputs)
         loss = self.criterion(outputs, targets)
-        self.logger.info(f'requires_grad {loss.requires_grad}')
 
         if self.metrics_dict:
             metrics_dict = self._calc_metrics(prediction=outputs, target=targets)
@@ -110,12 +110,14 @@ class SegModel(bm.BaseModel):
             test_loss, test_metrics = self.test_epoch(epoch)
             self.test_losses += [test_loss]
 
+            self.scheduler.step(train_loss)
+            self._reset_metrics()
+
             if self.metrics_dict and self.telegram_message:
                 self._save_chart()
                 self._send_telegram_message(epoch=epoch,
                                             train_metrics_dict=train_metrics,
-                                            test_metrics_dict=test_metrics)
-                
+                                            test_metrics_dict=test_metrics)  
             if (self.make_checkpoint_every_n_epoch 
                 and epoch % self.make_checkpoint_every_n_epoch == 0):
                 self._save_model_state(epoch=epoch)

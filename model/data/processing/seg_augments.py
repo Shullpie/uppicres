@@ -104,8 +104,9 @@ def apply_transforms(img: Img, mask: Mask,
                      transforms_list: list[Transformation | PTransformation],
                      normalize: Optional[dict[str, list]]
                      ) -> tuple[Img, Mask]:
-    for transformation in transforms_list:
-        img, mask = _transform(img, mask, transformation)
+    if transforms_list:
+        for transformation in transforms_list:
+            img, mask = _transform(img, mask, transformation)
     img = T.ToTensor()(img)
     mask = T.ToTensor()(mask)
     if normalize is not None:

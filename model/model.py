@@ -11,4 +11,8 @@ def train(options):
         raise NotImplementedError(f'Task "{task}" is not recognized. Check your config file.')
     
     model = M(options)
+    if options['checkpoint']:
+        model.load_model_from_checkpoint(options['checkpoint'])
+        model.scheduler.patience = 6
     model.fit()
+    

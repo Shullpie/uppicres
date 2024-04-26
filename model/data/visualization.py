@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 def show_image(img: Image.Image | torch.Tensor) -> None:
-    fig = plt.figure(figsize=(10, 10)) 
+    fig = plt.figure(figsize=(12, 12)) 
     if isinstance(img, torch.Tensor):
         img = ToPILImage()(img)
     plt.imshow(img)

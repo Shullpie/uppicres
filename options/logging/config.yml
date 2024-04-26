@@ -1,0 +1,48 @@
+version: 1
+
+filters:  
+  errorFilter:
+    (): utils.logging.log_filters.ErrorFilter
+  infoFilter:
+    (): utils.logging.log_filters.InfoFilter
+  telegramTrueFilter:
+    (): utils.logging.log_filters.TelegramTrueFilter
+  telegramFalseFilter:
+    (): utils.logging.log_filters.TelegramFalseFilter
+  
+  
+formatters:
+
+  fileFormatter: 
+    format: '#%(levelname)-8s [%(asctime)s] - %(message)s'
+  
+  stdoutFormatter:
+    format: '%(message)s'
+
+  
+handlers: 
+  stdoutHandler:
+    class: logging.StreamHandler
+    level: INFO
+    stream: ext://sys.stdout
+    formatter: stdoutFormatter
+    filters: [infoFilter, telegramFalseFilter]
+
+  fileHandler:
+    class: logging.FileHandler
+    filename: logs/logs/error.log
+    mode: a
+    level: ERROR
+    formatter: fileFormatter
+    filters: [errorFilter]
+
+  telegramHandler:
+    class: utils.logging.log_handlers.telegramHandler
+    level: INFO
+    filters: [infoFilter, telegramTrueFilter]
+  
+
+loggers:
+  model.modules.models.base_model:
+    level: INFO
+    handlers: [stdoutHandler, fileHandler, telegramHandler]

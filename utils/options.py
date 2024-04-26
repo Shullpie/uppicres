@@ -1,4 +1,3 @@
-import logging
 import argparse
 
 import yaml
@@ -21,7 +20,3 @@ def get_options() -> tuple[MainOptions, LoggerOptions]:
         logger_options = yaml.safe_load(logger_options.read())
     
     return (options, logger_options)
-
-
-def get_logger(task: str):  # Logger
-    return logging.getLogger(task)

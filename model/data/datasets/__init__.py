@@ -7,7 +7,7 @@ class Datasets(NamedTuple):
     test_set: Dataset
 
 
-def create_datasets(main_options: dict) -> Datasets:
+def  create_datasets(main_options: dict) -> Datasets:
     task = main_options["task"]
     if task == "seg":
         from model.data.datasets.seg_dataset import SegDataSet as DS

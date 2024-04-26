@@ -14,6 +14,8 @@ def get_nn(options: dict) -> Network:
     if task == 'seg':
         if model_str == 'SegUnet':
             from model.modules.archs.seg_unet import SegUnet as NN
+        elif model_str == 'SegUnetWide':
+            from model.modules.archs.seg_unet_wide import SegUnetWide as NN
         else:
             raise NotImplementedError(f'NN "{model_str}" is not recognized. Check your config file.')
         

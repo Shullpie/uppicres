@@ -1,17 +1,16 @@
 import os
+import logging
 from typing import TypeAlias
 
 import torch
-from torch.nn import Sigmoid
-
 import matplotlib
 import matplotlib.pyplot as plt
+
 from model.modules.optim import metrics
 from model.modules.optim import optimizers
 from model.modules.optim import schedulers
 from model.modules.models import get_nn
 from model.data.dataloaders import dataloaders
-from utils.options import get_logger
 
 matplotlib.use('Agg')
 
@@ -22,35 +21,54 @@ Metrics: TypeAlias = dict[str, float]
 class BaseModel:
 
     def __init__(self, options: dict) -> None: 
+        # main
         self.task = options.get('task')
         self.device = options.get('device')
         self.n_epoch = options.get('epoch')
         self.crop = options.get('crop', None)
         self.is_cropped = bool(self.crop)
-        self.logger = get_logger(self.task)    
-        self.train_loader, self.test_loader = dataloaders.create_dataloaders(options=options)
         self.model = get_nn(options)
+        
+        # data
+        self.train_loader, self.test_loader = dataloaders.create_dataloaders(options=options)
+        self.transform_data_every_n_epoch = options.get('transform_data_every_n_epoch', 0)
+
+        # optimization and metrics
         self.nns_options = options['nns'][self.task]['models'][self.model.name]
         self.optimizer = optimizers.get_optimizer(self.model.parameters(), self.nns_options.get('optimizer'))
         self.scheduler = schedulers.get_scheduler(self.optimizer, self.nns_options.get('scheduler'))
-        self.transform_data_every_n_epoch = options.get('transform_data_every_n_epoch', 0)
-        self.make_checkpoint_every_n_epoch = options.get('make_checkpoint_every_n_epoch', 0)
         self.criterion = metrics.get_criterion(options['nns'][self.task]['criterion'], self.device)
         self.metrics_dict = metrics.get_metrics(options['nns'][self.task]['metrics'], self.device)
-        self.telegram_message = options.get('telegram_send_logs', False)
-        self.logs_path = options.get('logs_path')
-        self._check_attrs()
-        self._get_trainer_info()
 
+        # logging
+        self.logs_path = options.get('logs_path')
+        self.logger = logging.getLogger(__name__)    
+        self.make_checkpoint_every_n_epoch = options.get('make_checkpoint_every_n_epoch', 0)
+        self.telegram_message = options.get('telegram_send_logs', False)
+        
+        self._check_attrs()
+
+        self.curr_epoch = 1
         self.train_losses = []
         self.test_losses = []
         
     def fit(self):
         NotImplementedError('Do not use BaseModel. Please, use concrete pipeline instand.')
+
+    def load_model_from_checkpoint(self, path: str) -> None:
+        self.model.to(self.device)
+        checkpoint = torch.load(path)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        self.train_losses = checkpoint['train_losses']
+        self.test_losses = checkpoint['test_losses']
+        self.curr_epoch = checkpoint['epoch'] + 1
+
+        del checkpoint
     
     def _check_attrs(self) -> None:
-        optional = set(['metrics_dict', 'transform_data_every_n_epoch'])
-        none_list = [key for key, value in vars(self).items() if value is None and key not in optional]
+        none_list = [key for key, value in vars(self).items() if value is None]
         if none_list:
             raise TypeError(f'Missing {len(none_list)} required argument(s): ' + ', '.join(none_list) + '.')
         
@@ -58,54 +76,67 @@ class BaseModel:
         for metric in self.metrics_dict.values():
             metric.reset()
     
-    def _save_model_state(self, epoch: int) -> None:
+    def _save_model_state(self, epoch: int, chart: bool = False) -> None:
         path = self.logs_path + \
-            f'states/{self.model.name}_{type(self.optimizer).__name__}_{type(self.scheduler).__name__}/'
-        
+            f'checkpoints/{self.model.name}_{type(self.optimizer).__name__}_{type(self.scheduler).__name__}' + \
+            f'_crop{self.crop}/'
+        path = path.lower()
         if not os.path.isdir(path):
             os.makedirs(path, exist_ok=True)
+        if chart:
+            self._save_chart(path.split('/', 1)[1] + 'chart.png')
+        try:
+            torch.save(
+                {
+                    'epoch': epoch,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'scheduler_state_dict': self.scheduler.state_dict(),
+                    'train_losses': self.train_losses,
+                    'test_losses': self.test_losses
+                },
+                path+f'{epoch}_epoch.pt'
+            )
+        except Exception as ex:
+            self.logger.error(ex, exc_info=True)
 
-        torch.save(
-            {
-                'epoch': epoch,
-                'model_state_dict': self.model.state_dict(),
-                'optimizer_state_dict': self.optimizer.state_dict(),
-                'scheduler_state_dict': self.scheduler.state_dict(),
-            },
-            path+f'{epoch}_epoch.pt'
-        )
+        self.model.to(self.device)
 
-    def load_model_from_checkpoint(self, path: str) -> None:
-        checkpoint = torch.load(path)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-
-    def _save_chart(self):
+    def _save_chart(self, path):
         fig = plt.figure(figsize=(10, 10))
         plt.plot(range(len(self.train_losses)), self.train_losses,
                  range(len(self.test_losses)), self.test_losses)
         plt.title('Loss function -> min')
         plt.legend(['train', 'test'])
-        plt.savefig(self.logs_path + 'temp/chart.png')
+
+        try:
+            plt.savefig(self.logs_path + path)
+        except Exception as ex:
+            self.logger.error(ex, exc_info=True)
+        
         plt.close(fig)
 
     def _send_telegram_message(self, 
                                epoch: int,
                                train_metrics_dict: Metrics,
                                test_metrics_dict: Metrics):
+        self._save_chart('temp/chart.png')
         train_metrics_str = '\n'.join(map(lambda x: f'{x[0]}: {x[1]:.3f}', train_metrics_dict.items()))
         test_metrics_str = '\n'.join(map(lambda x: f'{x[0]}: {x[1]:.3f}', test_metrics_dict.items()))
-        self.logger.info(
-            f'*📊Epoch {epoch}/{self.n_epoch}*\n'
-            f'*🔴Train metrics:*\n_Loss: {self.train_losses[-1]:.3f}\n{train_metrics_str}_\n\n'
-            f'*🟢Test metrics:*\n_Loss: {self.test_losses[-1]:.3f}\n{test_metrics_str}_\n\n'
-            '*⚙️Training params: *' 
-            f'*LR: * {self.scheduler._last_lr}'
-            '%'
-            r'D:\workspace\projects\uppicres\logs\temp\chart.png'
 
-        )
+        try:
+            self.logger.info(
+                f'*📊Epoch {epoch}/{self.n_epoch}*\n'
+                f'*🔴Train metrics:*\n_Loss: {self.train_losses[-1]:.3f}\n{train_metrics_str}_\n\n'
+                f'*🟢Test metrics:*\n_Loss: {self.test_losses[-1]:.3f}\n{test_metrics_str}_\n\n'
+                '*⚙️Training params: *' 
+                f'*LR: * {self.scheduler._last_lr}'
+                '%'
+                r'D:\workspace\projects\uppicres\logs\temp\chart.png',
+                extra={'telegram': True}
+            )
+        except Exception as ex:
+            self.logger.error(ex, exc_info=True)
 
     def _get_trainer_info(self) -> None:
         self.logger.info(
@@ -134,13 +165,13 @@ class BaseModel:
             f'Metrics: {self.metrics_dict.values()}\n'
             f'> Optimizer: {self.optimizer}\n\n'
             f'> Scheduler: {self.scheduler}\n'
-            f'Scheduler params: {self.scheduler.state_dict()}\n'
+            f'Scheduler params: {self.scheduler.state_dict()}\n',
+            extra={'telegram': False}
         ) 
 
     @torch.inference_mode    
     def _calc_metrics(self, prediction: torch.Tensor, target: torch.Tensor) -> Metrics:
         calculated_metrics = {}
-        prediction = Sigmoid()(prediction)
         target = target.to(dtype=torch.int8)
         for key, metric in self.metrics_dict.items():
             calculated_metrics[key] = metric(prediction, target).item()

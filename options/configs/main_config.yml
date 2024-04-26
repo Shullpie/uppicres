@@ -11,7 +11,7 @@
 
 # transforms
 # -
-
+# TODO Refactore this file
 #=| Main |================================================================================#
 # [train, inference]
 mode: train
@@ -22,24 +22,26 @@ name: uppicres
 task: seg
 
 # [SegUnet, ]
-nn_model: SegUnet
+nn_model: SegUnetWide
+
+# [0, path]
+checkpoint: logs/checkpoints/segunetwide_adamax_reducelronplateau_crop256/244_epoch.pt
 
 # [cpu, cuda|cuda:0]
 device: cuda
 
 # [0-disable, 256, 512, 1024]
-crop: 512
+crop: 256
 
-epoch: 100
+epoch: 1000
 
 # [0-disable, n]
-transform_data_every_n_epoch: 10
-make_checkpoint_every_n_epoch: 10
+transform_data_every_n_epoch: 5
+make_checkpoint_every_n_epoch: 1
 
 logs_path: logs/
 
 telegram_send_logs: True
-
 
 
 #=| Data |================================================================================#
@@ -48,20 +50,20 @@ datasets:
     #Dataloader params
     dataloader:
       train:
-        batch_size: 2
+        batch_size: 1
         shuffle: true
         num_workers: 2
         pin_memory: true
         drop_last: false
 
       test:
-        batch_size: 2
+        batch_size: 1
         shuffle: false
         drop_last: false
 
     train:
-      imgs_path: "data/seg_damage_data/train/images/" 
-      masks_path: "data/seg_damage_data/train/masks/"
+      imgs_path: "data/seg_damage_data/main/train/images/" 
+      masks_path: "data/seg_damage_data/main/train/masks/"
 
       # [true, false]
       load_to_ram: true
@@ -69,20 +71,20 @@ datasets:
       #mean and std of all images in dataset
       normalize:
         mean: [0.4941, 0.4605, 0.4085]
-        std: [0.1954, 0.1875, 0.1738]
+        std: [0.1446, 0.1396, 0.1307]
         
       # [GrayScale, ColorJitter, RandomHorizontalFlip, RandomPosterize, 
       # RandomAdjustSharpness, RandomVerticalFlip, RandomEqualize]
       transforms:
         colorjitter:
           p: .2
-          brightness: [.1, .2, .3, .4]
-          contrast: [.1, .2, .3, .4]
-          saturation: [.1, .2, .3, .4]
-          hue: [.1, .2]
+          brightness: [.1, .2, .3, .4, .5]
+          contrast: [.1, .2, .3, .4, .5]
+          saturation: [.1, .2, .3, .4, .5]
+          hue: [.1, .2, .3]
 
         randomposterize:
-          p: 0.1
+          p: .1
           bits: [4, 6]
         
         randomadjustsharpness:
@@ -97,16 +99,16 @@ datasets:
           num_output_channels: 3
 
         randomhorizontalflip:
-          p: .3
+          p: .5
 
         randomverticalflip:
-          p: .3
+          p: .5
 
     test:
-      imgs_path: "data/seg_damage_data/test/images/"
-      masks_path: "data/seg_damage_data/test/masks/"
+      imgs_path: "data/seg_damage_data/main/test/images/"
+      masks_path: "data/seg_damage_data/main/test/masks/"
 
-      # [ture, false]
+      # [true, false]
       load_to_ram: true
 
       normalize:
@@ -142,9 +144,26 @@ nns:
         scheduler:
           scheme: ReduceLROnPlateau
           factor: .1
-          patience: 5
+          patience: 15
           cooldown: 5
-          threshold: 1e-4
-          eps: 1e-8
+          threshold: 1e-6
+          eps: 1e-12
+
+      SegUnetWide:
+        in_channels: 3 # DO NOT CHANGE!
+        out_channels: 1 # DO NOT CHANGE!
+        activation_function: "relu"
+  
+        optimizer: 
+          name: adamax
+          lr: 1e-3
+        
+        scheduler:
+          scheme: ReduceLROnPlateau
+          factor: .1
+          patience: 10
+          cooldown: 10
+          threshold: 1e-6
+          eps: 1e-12
       
   

@@ -1,17 +1,24 @@
 import logging
 
 
-class TelegramInfoFilter(logging.Filter):
-    def filter(self, record):
-        return record.msg.startswith('🔴')
-
-
-class TelegramChartFilter(logging.Filter):
+class ErrorFilter:
     def filter(self, record: logging.LogRecord) -> bool:
-        return record.msg.endswith('chart.png')
+        return record.levelname in ['ERROR', 'CRITICAL']
 
 
-class StdoutInfoFilter(logging.Filter):
-    def filter(self, record):
-        return 'chart.png' not in record.msg
+class InfoFilter:
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelname == 'INFO'
+
+
+class TelegramTrueFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.telegram:
+            return True
+
+
+class TelegramFalseFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if not record.telegram:
+            return True
     

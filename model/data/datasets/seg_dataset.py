@@ -47,8 +47,8 @@ class SegDataSet(Dataset):
                                                   transforms_list=self.transforms_list,
                                                   normalize=self.normalize)
         if self.crop is not None:
-            img = functional.crop_into_nxn(img=img, n=self.crop)
-            mask = functional.crop_into_nxn(img=mask, n=self.crop)
+            img, _ = functional.crop_into_nxn(img=img, n=self.crop)
+            mask, _ = functional.crop_into_nxn(img=mask, n=self.crop)
         return img, mask
 
     def __len__(self) -> int:

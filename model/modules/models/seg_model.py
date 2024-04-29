@@ -1,9 +1,7 @@
 import torch
 from tqdm import tqdm
 from typing import NamedTuple
-import torchvision.transforms as T
 import model.modules.models.base_model as bm
-import matplotlib.pyplot as plt
 
 
 class CroppedBatch(NamedTuple):
@@ -29,10 +27,12 @@ class SegModel(bm.BaseModel):
             targets = targets.reshape((n, c_t, img_size, img_size))
 
         self.optimizer.zero_grad()
-        inputs = inputs.to(self.device)
-        targets = targets.to(self.device)
 
+        inputs = inputs.to(self.device)
         outputs = self.model(inputs)
+        inputs = inputs.cpu()
+
+        targets = targets.to(self.device)
         loss = self.criterion(outputs, targets)
 
         loss.backward()
@@ -61,7 +61,7 @@ class SegModel(bm.BaseModel):
         metrics_by_epoch = self._get_mean_metrics_dict(metrics_by_epoch, dataset_lenght)
         return (loss_by_epoch, metrics_by_epoch)
     
-    @torch.inference_mode
+    @torch.inference_mode()
     def testing_step(self, batch) -> tuple[bm.Loss, bm.Metrics]:
         metrics_dict = {}
         inputs, targets = batch
@@ -76,6 +76,7 @@ class SegModel(bm.BaseModel):
 
         inputs = inputs.to(self.device)
         outputs = self.model(inputs)
+        inputs = inputs.cpu()
         targets = targets.to(self.device)
         loss = self.criterion(outputs, targets)
 

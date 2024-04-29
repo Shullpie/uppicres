@@ -58,11 +58,11 @@ class SegUnetWide(nn.Module):
         self.out_channels = out_channels
         self.activation_function = activation_function
         self.img_size = img_size if img_size else 1024
-        self.features = self._fill_features(img_size=self.img_size)
+        self.n_features = self._fill_n_features(img_size=self.img_size)
         
         if (self.in_channels is not None 
             and self.out_channels is not None 
-            and self.activation_function_func is not None):
+            and self.activation_function is not None):
             self._init_parts()
 
     def init_from_config(self, nn_options: dict) -> None:
@@ -78,12 +78,9 @@ class SegUnetWide(nn.Module):
         skip_connections = []
 
         # Down
-        # crop 256: 3x256x256 -> 64x256x256 -> 128x128x128 -> 256x32x32
         x = self.downs[0](x)
-        skip_connections.append(x)
         for down in self.downs[1:]:
             x = down(x)
-
             skip_connections.append(x)
             x = self.pool(x)
 
@@ -91,7 +88,6 @@ class SegUnetWide(nn.Module):
         # crop 512: 1024x32x32 -> 2048x32x32
         x = self.bottleneck(x)
         skip_connections = skip_connections[::-1]
-
         # Up
         # crop 512: 2048x32x32 -> 1024x32x32 -> 512x64x64 -> 256x128x128 -> 128x256x256 -> 64x512x512 
         for idx in range(0, len(self.ups)-2, 2):
@@ -106,26 +102,33 @@ class SegUnetWide(nn.Module):
         return self.final_conv(x)
     
     @staticmethod
-    def _fill_features(img_size: int) -> tuple[int]:
-        features = [64, 128, 256]
+    def _fill_n_features(img_size: int) -> tuple[int]:
+        n_features = [64, 128, 256]
 
-        while features[-1] < img_size*2:
-            features.append(features[-1]*2)
-        return tuple(features)
+        while n_features[-1] < img_size*2:
+            n_features.append(n_features[-1]*2)
+        return tuple(n_features)
 
     def _init_parts(self):
+        if isinstance(self.activation_function, str):
+            self.activation_function = activation_funcs.get_activation_function(self.activation_function)
         # Down part
-        for feature in self.features:
-            self.downs.append(BatchDoubleConv(self.in_channels, feature, self.activation_function))
-            self.in_channels = feature
+        for f in self.n_features:
+            self.downs.append(BatchDoubleConv(self.in_channels, f, self.activation_function))
+            self.in_channels = f
 
         # Up part    
-        for feature in reversed(self.features):
-            self.ups.append(nn.ConvTranspose2d(feature*2, feature, kernel_size=2, stride=2))
-            self.ups.append(BatchDoubleConv(feature*2, feature, self.activation_function))
+        for f in reversed(self.n_features):
+            self.ups.append(nn.ConvTranspose2d(f*2, f, kernel_size=2, stride=2))
+            self.ups.append(BatchDoubleConv(f*2, f, self.activation_function))
 
         # Bottleneck   
-        self.bottleneck = BatchDoubleConv(self.features[-1], 2*self.features[-1], self.activation_function)
+        self.bottleneck = BatchDoubleConv(self.n_features[-1], 2*self.n_features[-1], self.activation_function)
 
         # Final
-        self.final_conv = BatchDoubleConv(self.features[0], self.out_channels, self.activation_function)
+        self.final_conv = nn.Conv2d(self.n_features[0], 
+                                    self.out_channels, 
+                                    kernel_size=3, 
+                                    stride=1, 
+                                    padding=1,
+                                    bias=False)

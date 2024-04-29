@@ -2,5 +2,6 @@ uppicres.code-workspace
 venv
 /data
 /logs
+/pretrained
 **/__pycache__
 test.ipynb

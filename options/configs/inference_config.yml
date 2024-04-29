@@ -1,0 +1,18 @@
+name: uppicres
+logs_path: logs/
+device: cuda
+crop: 256
+
+seg_normalize:
+  mean: [0.4941, 0.4605, 0.4085]
+  std: [0.1446, 0.1396, 0.1307]
+
+  
+nns:
+  SegUnetWide256:
+    in_channels: 3 # DO NOT CHANGE!
+    out_channels: 1 # DO NOT CHANGE!
+    activation_function: "relu"
+
+    path: pretrained/SegUnetWide256.pt
+  

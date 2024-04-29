@@ -25,7 +25,7 @@ task: seg
 nn_model: SegUnetWide
 
 # [0, path]
-checkpoint: logs/checkpoints/segunetwide_adamax_reducelronplateau_crop256/244_epoch.pt
+checkpoint: logs\checkpoints\segunetwide_adamax_reducelronplateau_crop256\20_epoch.pt
 
 # [cpu, cuda|cuda:0]
 device: cuda
@@ -37,7 +37,7 @@ epoch: 1000
 
 # [0-disable, n]
 transform_data_every_n_epoch: 5
-make_checkpoint_every_n_epoch: 1
+make_checkpoint_every_n_epoch: 5
 
 logs_path: logs/
 
@@ -161,7 +161,7 @@ nns:
         scheduler:
           scheme: ReduceLROnPlateau
           factor: .1
-          patience: 10
+          patience: 15
           cooldown: 10
           threshold: 1e-6
           eps: 1e-12

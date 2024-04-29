@@ -1,7 +1,7 @@
 import logging
 import logging.config
 
-from model import model
+from model import train
 from utils import options
 
 
@@ -13,10 +13,10 @@ def main():
     mode = OPTIONS.get('mode', None)
     
     if mode == 'train':
-        model.train(OPTIONS)
+        train.train(OPTIONS)
     
     elif mode == 'inference':
-        pass
+        pass    #TODO inferevce
 
     else:
         raise NotImplementedError(f'Mode "{mode}" is not recognized. Check your config file.')

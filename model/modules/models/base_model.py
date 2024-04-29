@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from model.modules.optim import metrics
 from model.modules.optim import optimizers
 from model.modules.optim import schedulers
-from model.modules.models import get_nn
+from model.modules.models import get_train_model
 from model.data.dataloaders import dataloaders
 
 matplotlib.use('Agg')
@@ -18,7 +18,7 @@ Loss: TypeAlias = float
 Metrics: TypeAlias = dict[str, float]
 
 
-class BaseModel:
+class BaseModel():
 
     def __init__(self, options: dict) -> None: 
         # main
@@ -27,7 +27,7 @@ class BaseModel:
         self.n_epoch = options.get('epoch')
         self.crop = options.get('crop', None)
         self.is_cropped = bool(self.crop)
-        self.model = get_nn(options)
+        self.model = get_train_model(options)
         
         # data
         self.train_loader, self.test_loader = dataloaders.create_dataloaders(options=options)
@@ -45,8 +45,6 @@ class BaseModel:
         self.logger = logging.getLogger(__name__)    
         self.make_checkpoint_every_n_epoch = options.get('make_checkpoint_every_n_epoch', 0)
         self.telegram_message = options.get('telegram_send_logs', False)
-        
-        self._check_attrs()
 
         self.curr_epoch = 1
         self.train_losses = []
@@ -66,11 +64,6 @@ class BaseModel:
         self.curr_epoch = checkpoint['epoch'] + 1
 
         del checkpoint
-    
-    def _check_attrs(self) -> None:
-        none_list = [key for key, value in vars(self).items() if value is None]
-        if none_list:
-            raise TypeError(f'Missing {len(none_list)} required argument(s): ' + ', '.join(none_list) + '.')
         
     def _reset_metrics(self) -> None:
         for metric in self.metrics_dict.values():
@@ -169,7 +162,7 @@ class BaseModel:
             extra={'telegram': False}
         ) 
 
-    @torch.inference_mode    
+    @torch.inference_mode()  
     def _calc_metrics(self, prediction: torch.Tensor, target: torch.Tensor) -> Metrics:
         calculated_metrics = {}
         target = target.to(dtype=torch.int8)
@@ -178,7 +171,7 @@ class BaseModel:
         return calculated_metrics
 
     @staticmethod
-    @torch.inference_mode
+    @torch.inference_mode()
     def _accumulate_metrics(total_metrics_dict: dict[str, float], 
                             batch_metric_dict: dict[str, float]) -> dict[str, float]:
         if not total_metrics_dict:
@@ -189,7 +182,7 @@ class BaseModel:
         return total_metrics_dict
 
     @staticmethod   
-    @torch.inference_mode 
+    @torch.inference_mode() 
     def _get_mean_metrics_dict(metrics: Metrics, dataset_length: int) -> Metrics:
         for key in metrics.keys():
             metrics[key] /= dataset_length

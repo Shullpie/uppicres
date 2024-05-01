@@ -122,7 +122,7 @@ datasets:
     dataloader:
       train:
         batch_size: 10
-        shuffle: true
+        shuffle: false
         num_workers: 2
         pin_memory: true
         drop_last: false
@@ -138,6 +138,10 @@ datasets:
 
       # [true, false]
       load_to_ram: false
+
+      normalize:
+        mean: [0.5141, 0.4494, 0.4155]
+        std: [0.2474, 0.2375, 0.2348]
 
       # [GrayScale, ColorJitter, RandomHorizontalFlip, RandomPosterize,
       # RandomAdjustSharpness, RandomVerticalFlip, RandomEqualize]
@@ -175,7 +179,11 @@ datasets:
       masks_path: "data/clr_damage_data/test/masks/"
 
       # [true, false]
-      load_to_ram: true
+      load_to_ram: false
+
+      normalize:
+        mean: [0.5141, 0.4494, 0.4155]
+        std: [0.2474, 0.2375, 0.2348]
 
 
 #=| NN's |================================================================================#

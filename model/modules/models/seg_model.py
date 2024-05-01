@@ -4,20 +4,15 @@ from typing import NamedTuple
 import model.modules.models.base_model as bm
 
 
-class CroppedBatch(NamedTuple):
-    cropped_input: torch.Tensor
-    cropped_output: torch.Tensor
-
-
 class SegModel(bm.BaseModel):
-    
-    def __init__(self, options: dict) -> None:     
+
+    def __init__(self, options: dict) -> None:
         super().__init__(options=options)
-    
+
     def training_step(self, batch: torch.Tensor) -> tuple[bm.Loss, bm.Metrics]:
         metrics_dict = {}
         inputs, targets = batch
-        
+
         if self.is_cropped:
             n = inputs.shape[0]*inputs.shape[1]
             c_i, c_t = inputs.shape[2], targets.shape[2]
@@ -40,7 +35,7 @@ class SegModel(bm.BaseModel):
 
         if self.metrics_dict:
             metrics_dict = self._calc_metrics(prediction=outputs, target=targets)
-            
+
         return (loss.item(), metrics_dict)
 
     def train_epoch(self, epoch) -> tuple[bm.Loss, bm.Metrics]:
@@ -60,7 +55,7 @@ class SegModel(bm.BaseModel):
         loss_by_epoch = loss_by_epoch/dataset_lenght
         metrics_by_epoch = self._get_mean_metrics_dict(metrics_by_epoch, dataset_lenght)
         return (loss_by_epoch, metrics_by_epoch)
-    
+
     @torch.inference_mode()
     def testing_step(self, batch) -> tuple[bm.Loss, bm.Metrics]:
         metrics_dict = {}
@@ -102,11 +97,11 @@ class SegModel(bm.BaseModel):
         loss_by_epoch = loss_by_epoch/dataset_lenght
         metrics_by_epoch = self._get_mean_metrics_dict(metrics_by_epoch, dataset_lenght)
         return (loss_by_epoch, metrics_by_epoch)
-    
+
     def fit(self):
         self.model.to(self.device)
         self._get_trainer_info()
-        
+
         for epoch in range(self.curr_epoch, self.n_epoch+1):
             train_loss, train_metrics = self.train_epoch(epoch)
             self.train_losses += [train_loss]
@@ -119,9 +114,9 @@ class SegModel(bm.BaseModel):
             if self.metrics_dict and self.telegram_message:
                 self._send_telegram_message(epoch=epoch,
                                             train_metrics_dict=train_metrics,
-                                            test_metrics_dict=test_metrics)  
-                
-            if (self.make_checkpoint_every_n_epoch 
+                                            test_metrics_dict=test_metrics)
+
+            if (self.make_checkpoint_every_n_epoch
                 and epoch % self.make_checkpoint_every_n_epoch == 0):
                 self._save_model_state(epoch=epoch, chart=True)
 
@@ -129,9 +124,3 @@ class SegModel(bm.BaseModel):
                 self.train_loader.dataset._change_transforms_list()
 
         self._save_model_state(self.n_epoch, chart=True)
-
-    def cat_images(self, img: torch.Tensor, img_size) -> CroppedBatch:
-        res = []
-        for i in range(0, (img_size//self.crop)**2, img_size//self.crop):
-            res.append(torch.cat(tuple(img[i:i+img_size//self.crop]), dim=-1))
-        return torch.cat(tuple(res), dim=-2).unsqueeze(0)

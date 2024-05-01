@@ -6,12 +6,12 @@ from PIL import Image
 
 def crop_into_nxn(img: torch.Tensor, n: int) -> torch.Tensor:
     _, img_h, img_w = img.shape
-    if img_h == img_w == 256:
-        return img
-    
+    if img_h == img_w == n:
+        return img, (1, 1)
+
     if (img_h % n != 0) or (img_w % n != 0):
         raise ValueError(f'The image side is not divisible by n={n}. h={img_h}, w={img_w}.')
-    
+
     patches: list[torch.Tensor] = []
     for colomn in range(0, img_h, n):
         for line in range(0, img_w, n):
@@ -21,7 +21,7 @@ def crop_into_nxn(img: torch.Tensor, n: int) -> torch.Tensor:
 
 def resize_multiples_n(img: torch.Tensor, n: int) -> torch.Tensor:
     _, img_h, img_w = img.shape
-    if (img_w % n == 0) and (img_h % n == 0): 
+    if (img_w % n == 0) and (img_h % n == 0):
         return img
 
     if img_w % n != 0:
@@ -31,7 +31,7 @@ def resize_multiples_n(img: torch.Tensor, n: int) -> torch.Tensor:
         else:
             img_w = img_w-img_w%n
             img = T.CenterCrop(size=(img_h, img_w))(img)
-        
+
     if img_h % n != 0:
         if (n - img_h%n) <= img_h*0.1:
             img_h = img_h + (n - img_h%n)

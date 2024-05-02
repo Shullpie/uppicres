@@ -198,7 +198,7 @@ nns:
         pos_weight: [10.27]
 
     models:
-      SegUnet:
+      Unet:
         in_channels: 3 # DO NOT CHANGE!
         out_channels: 1 # DO NOT CHANGE!
         activation_function: "relu"  # [relu, gelu]  #TODO Add LeakyReLu
@@ -215,7 +215,7 @@ nns:
           threshold: 1e-6
           eps: 1e-12
 
-      SegUnetWide:
+      UnetWide:
         in_channels: 3 # DO NOT CHANGE!
         out_channels: 1 # DO NOT CHANGE!
         activation_function: "relu"
@@ -231,3 +231,45 @@ nns:
           cooldown: 10
           threshold: 1e-6
           eps: 1e-12
+
+  clr:
+  # [bacc, broc-auc, dice, None]
+  metrics: []
+
+  # [bce]
+  criterion:
+
+  models:
+    Unet:
+      in_channels: 4 # DO NOT CHANGE!
+      out_channels: 3 # DO NOT CHANGE!
+      activation_function: "relu"  # [relu, gelu]  #TODO Add LeakyReLu
+
+      optimizer:
+        name: adamax
+        lr: 1e-3
+
+      scheduler:
+        scheme: ReduceLROnPlateau
+        factor: .1
+        patience: 15
+        cooldown: 5
+        threshold: 1e-6
+        eps: 1e-12
+
+    UnetWide:
+      in_channels: 3 # DO NOT CHANGE!
+      out_channels: 1 # DO NOT CHANGE!
+      activation_function: "relu"
+
+      optimizer:
+        name: adamax
+        lr: 1e-3
+
+      scheduler:
+        scheme: ReduceLROnPlateau
+        factor: .1
+        patience: 15
+        cooldown: 10
+        threshold: 1e-6
+        eps: 1e-12

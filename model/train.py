@@ -14,6 +14,7 @@ def train(options):
     model = get_train_model(options)
     if options['checkpoint']:
         model.load_model_from_checkpoint(options['checkpoint'])
+        model.scheduler.patience = 5
     model.fit()
 
         

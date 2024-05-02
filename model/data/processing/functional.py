@@ -1,27 +1,42 @@
+
 import torch
 import torchvision.transforms as T
-from torchvision.transforms.functional import crop
-from PIL import Image
+from typing import Iterable, Literal
+from torchvision.transforms.functional import crop  #TODO change to T.Crop
+
+from utils.types import (
+    ImageTorch, MaskTorch,
+    CroppedImageTorch, CroppedMaskTorch,
+    ImagePIL
+)
 
 
-def crop_into_nxn(img: torch.Tensor, n: int) -> torch.Tensor:
+def crop_into_nxn(
+        img: ImageTorch | MaskTorch, 
+        n: int
+) -> tuple[CroppedImageTorch | CroppedMaskTorch, tuple[int, int]]:
+    
     _, img_h, img_w = img.shape
-    if img_h == img_w == n:
+    if n is None or (img_h == img_w == n):
         return img, (1, 1)
 
     if (img_h % n != 0) or (img_w % n != 0):
         raise ValueError(f'The image side is not divisible by n={n}. h={img_h}, w={img_w}.')
 
-    patches: list[torch.Tensor] = []
+    patches = []
     for colomn in range(0, img_h, n):
         for line in range(0, img_w, n):
             patches.append(crop(img, top=colomn, left=line, height=n, width=n))
     return torch.stack(patches), (img_w//256, img_h//256)
 
 
-def resize_multiples_n(img: torch.Tensor, n: int) -> torch.Tensor:
+def resize_multiples_n(
+        img: ImageTorch | ImagePIL, 
+        n: int
+) -> ImageTorch | ImagePIL:
+    
     _, img_h, img_w = img.shape
-    if (img_w % n == 0) and (img_h % n == 0):
+    if n is None or (img_w % n == 0) and (img_h % n == 0):
         return img
 
     if img_w % n != 0:
@@ -42,7 +57,13 @@ def resize_multiples_n(img: torch.Tensor, n: int) -> torch.Tensor:
     return img
 
 
-def prepare_img(img: Image.Image, mean, std, crop):  # TODO Lireral, optional mean,std
+def prepare_img(
+        img: ImageTorch, 
+        mean: int | Iterable, 
+        std: int | Iterable,
+        crop: Literal[256] | Literal[512]
+) -> ImageTorch:  # TODO Lireral, optional mean,std
+    
     if mean is not None and std is not None:
         img = T.Normalize(mean, std)(img)
 
@@ -50,9 +71,14 @@ def prepare_img(img: Image.Image, mean, std, crop):  # TODO Lireral, optional me
     img, dims = crop_into_nxn(img, crop)
     return img, dims
 
-# def concatenate_patches(patches, dims):
-#     img_size = patches[0].shape[-1]
-#     res = []
-#     for i in range(0, dims[0], dims[1]):
-#         res.append(torch.cat(tuple(patches[i:i+img_size//self.crop]), dim=-1))
-#     return torch.cat(tuple(res), dim=-2).unsqueeze(0)
+
+def cat_patches(
+        patches: CroppedMaskTorch, 
+        dims: tuple[int, int]
+) -> MaskTorch:
+    
+    res = []
+    x, y = dims
+    for i in range(0, y*x, y):
+        res.append(torch.cat(tuple(patches[i:i+y]), dim=-1))
+    return torch.cat(tuple(res), dim=-2)

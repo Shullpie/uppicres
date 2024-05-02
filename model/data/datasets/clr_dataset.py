@@ -5,7 +5,7 @@ import torchvision.transforms as T
 from PIL import Image
 
 from model.data.processing import functional, augments
-from model.data.datasets.base_dataset import BaseDataSet, ImgTorch, MaskTorch
+from model.data.datasets.base_dataset import BaseDataSet, ImgTorch
 
 
 class ClrDataSet(BaseDataSet):
@@ -15,7 +15,7 @@ class ClrDataSet(BaseDataSet):
                  crop: Optional[Literal[256] | Literal[512]]) -> None:
         super().__init__(dataset_type_options, crop)
 
-    def __getitem__(self, idx: int) -> tuple[ImgTorch, ]:
+    def __getitem__(self, idx: int) -> tuple[ImgTorch, ImgTorch]:
         clear_img, mask = None, None
         if self.load_to_ram:
             clear_img = self.images[idx]

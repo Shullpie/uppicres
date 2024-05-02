@@ -22,10 +22,10 @@ name: uppicres
 task: clr
 
 # [SegUnet, ]
-nn_model: SegUnetWide
+nn_model: UnetWide
 
 # [0, path]
-checkpoint: logs\checkpoints\segunetwide_adamax_reducelronplateau_crop256\20_epoch.pt
+checkpoint: model\checkpoints\segunetwide_adamax_reducelronplateau_crop256\20_epoch.pt
 
 # [cpu, cuda|cuda:0]
 device: cuda
@@ -233,43 +233,20 @@ nns:
           eps: 1e-12
 
   clr:
-  # [bacc, broc-auc, dice, None]
-  metrics: []
+    metrics: []
 
-  # [bce]
-  criterion:
+    criterion:
 
-  models:
-    Unet:
-      in_channels: 4 # DO NOT CHANGE!
-      out_channels: 3 # DO NOT CHANGE!
-      activation_function: "relu"  # [relu, gelu]  #TODO Add LeakyReLu
+    models:
+      Title:
+        optimizer:
+          name: adamax
+          lr: 1e-3
 
-      optimizer:
-        name: adamax
-        lr: 1e-3
-
-      scheduler:
-        scheme: ReduceLROnPlateau
-        factor: .1
-        patience: 15
-        cooldown: 5
-        threshold: 1e-6
-        eps: 1e-12
-
-    UnetWide:
-      in_channels: 3 # DO NOT CHANGE!
-      out_channels: 1 # DO NOT CHANGE!
-      activation_function: "relu"
-
-      optimizer:
-        name: adamax
-        lr: 1e-3
-
-      scheduler:
-        scheme: ReduceLROnPlateau
-        factor: .1
-        patience: 15
-        cooldown: 10
-        threshold: 1e-6
-        eps: 1e-12
+        scheduler:
+          scheme: ReduceLROnPlateau
+          factor: .1
+          patience: 15
+          cooldown: 5
+          threshold: 1e-6
+          eps: 1e-12

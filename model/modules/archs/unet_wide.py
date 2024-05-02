@@ -2,8 +2,11 @@ from typing import Optional, Callable, Literal
 
 import torch
 import torch.nn as nn
+from torchvision.transforms.functional import hflip
 
 from model.modules.optim import activation_funcs
+from model.data.processing import functional
+from utils.types import MaskTorch
 
 
 class BatchDoubleConv(nn.Module):
@@ -123,12 +126,76 @@ class UnetWide(nn.Module):
             self.ups.append(BatchDoubleConv(f*2, f, self.activation_function))
 
         # Bottleneck
-        self.bottleneck = BatchDoubleConv(self.n_features[-1], 2*self.n_features[-1], self.activation_function)
+        self.bottleneck = BatchDoubleConv(
+            in_channels=self.n_features[-1], 
+            out_channels=2*self.n_features[-1], 
+            activation_function=self.activation_function
+        )
 
         # Final
-        self.final_conv = nn.Conv2d(self.n_features[0],
-                                    self.out_channels,
-                                    kernel_size=3,
-                                    stride=1,
-                                    padding=1,
-                                    bias=False)
+        self.final_conv = nn.Conv2d(
+            self.n_features[0],
+            self.out_channels,
+            kernel_size=3,
+            stride=1,
+            padding=1,
+            bias=False
+        )
+        
+    def inference(
+            self, 
+            user_img: torch.Tensor, 
+            inference_options: dict, 
+            device: str
+    ) -> MaskTorch:
+        self.eval()
+        res = []
+        n_patches = len(user_img)
+
+        options = inference_options['seg']
+        crop = inference_options.get('crop', None)
+        step = inference_options.get('patches_to_device', 2)
+        pos_label_threshold = options.get('pos_label_threshold', 0.5)
+
+        mean = options.get('normalize', None).get('mean', None)
+        std = options.get('normalize', None).get('std', None)
+
+        flipped_image = hflip(user_img)
+
+        user_img, dims = functional.prepare_img(
+            img=user_img, 
+            mean=mean,
+            std=std,
+            crop=crop
+        )  
+        flipped_image, _ = functional.prepare_img(
+            img=flipped_image, 
+            mean=mean,
+            std=std,
+            crop=crop
+        )    
+        
+        for img in [user_img, flipped_image]:
+            mask = []
+            for i in range(0, n_patches, step):
+                if i+step > n_patches:
+                    tmp = img[i:].to(device)
+                    
+                    for patch in self(tmp):
+                        mask.append(patch.cpu())
+                    break
+
+                tmp = img[i:i+step].to(device)
+                for patch in self(tmp):
+                    mask.append(patch.cpu())
+            res.append(torch.stack(mask))
+        mask1, mask2 = res
+        del res
+
+        mask1 = torch.sigmoid(functional.cat_patches(mask1, dims))
+        mask2 = torch.sigmoid(functional.cat_patches(mask2, dims))
+        mask2 = hflip(mask2)
+
+        mask1 = mask1 > pos_label_threshold
+        mask2 = mask2 > pos_label_threshold
+        return torch.logical_or(mask1, mask2).to(torch.float32)   

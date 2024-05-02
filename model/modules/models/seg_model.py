@@ -1,6 +1,5 @@
 import torch
 from tqdm import tqdm
-from typing import NamedTuple
 import model.modules.models.base_model as bm
 
 

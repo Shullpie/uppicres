@@ -1,28 +1,24 @@
 import os
 from typing import Literal
-
 from PIL import Image
 from torch.utils.data import Dataset
 
 from model.data.processing import augments
-from utils.types import (ImageTorch, MaskTorch,
-                         ImagePIL, MaskPIL)
+from utils.types import (
+    ImageTorch, MaskTorch,
+    ImagePIL, MaskPIL
+)
 
 
 class BaseDataSet(Dataset):
 
-    def __init__(
-        self,
-        options: dict,
-        mode: Literal['train'] | Literal['test']
-    ) -> None:
+    def __init__(self, options: dict, mode: Literal['train'] | Literal['test']) -> None:
         self.images, self.masks = [], []
         self.crop = options.get('crop', None)
         self.mode_options = options['datasets'][mode]
         self.load_to_ram = self.mode_options['load_to_ram']
         self.normalize = options.get('datasets', None).get('normalize', None)
         self.imgs_path_list, self.masks_path_list = self._get_image_paths()
-
         if self.load_to_ram:
             self.images, self.masks = self._load_to_ram()
 

@@ -1,12 +1,13 @@
 import torch
 from torchvision.transforms import ToPILImage
-from PIL import Image
 import matplotlib.pyplot as plt
 
+from utils.types import ImagePIL, ImageTorch
 
-def show_image(img: Image.Image | torch.Tensor) -> None:
+
+def show_image(img: ImageTorch | ImagePIL) -> None:
     fig = plt.figure(figsize=(12, 12)) 
-    if isinstance(img, torch.Tensor):
+    if isinstance(img, ImageTorch):
         img = ToPILImage()(img)
     plt.imshow(img)
     plt.show()

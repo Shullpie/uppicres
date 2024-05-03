@@ -1,0 +1,88 @@
+clr_dataset:
+    #Dataloader params
+    dataloader:
+      train:
+        batch_size: 10
+        shuffle: false
+        num_workers: 2
+        pin_memory: true
+        drop_last: false
+
+      test:
+        batch_size: 10
+        shuffle: false
+        drop_last: false
+
+    train:
+      imgs_path: "data/clr_damage_data/train/images/"
+      masks_path: "data/clr_damage_data/train/masks/"
+
+      # [true, false]
+      load_to_ram: false
+
+      normalize:
+        mean: [0.5141, 0.4494, 0.4155]
+        std: [0.2474, 0.2375, 0.2348]
+
+      # [GrayScale, ColorJitter, RandomHorizontalFlip, RandomPosterize,
+      # RandomAdjustSharpness, RandomVerticalFlip, RandomEqualize]
+      transforms:
+        colorjitter:
+          p: .2
+          brightness: [.1, .2, .3, .4]
+          contrast: [.1, .2, .3, .4]
+          saturation: [.1, .2, .3, .4]
+          hue: [.1, .2]
+
+        randomposterize:
+          p: .1
+          bits: [4, 6]
+
+        randomadjustsharpness:
+          p: .2
+          sharpness_factor: [4, 6, 8]
+
+        randomequalize:
+          p: .2
+
+        grayscale:
+          p: .1
+          num_output_channels: 3
+
+        randomhorizontalflip:
+          p: .5
+
+        randomverticalflip:
+          p: .5
+
+    test:
+      imgs_path: "data/clr_damage_data/test/images/"
+      masks_path: "data/clr_damage_data/test/masks/"
+
+      # [true, false]
+      load_to_ram: false
+
+      normalize:
+        mean: [0.5141, 0.4494, 0.4155]
+        std: [0.2474, 0.2375, 0.2348]
+
+        clr:
+    metrics: []
+
+    criterion:
+
+    models:
+      PonvNet256:
+        activation_function_1: relu
+        activation_function_2: leaky_relu
+        optimizer:
+          name: adamax
+          lr: 1e-3
+
+        scheduler:
+          scheme: ReduceLROnPlateau
+          factor: .1
+          patience: 15
+          cooldown: 10
+          threshold: 1e-6
+          eps: 1e-12

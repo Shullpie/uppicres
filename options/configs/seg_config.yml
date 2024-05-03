@@ -1,0 +1,94 @@
+mode: train
+task: seg
+nn_model: unetwide
+device: cuda
+crop: 256
+epoch: 1000
+transform_data_every_n_epoch: 5
+make_checkpoint_every_n_epoch: 5
+
+telegram_send_logs: True
+checkpoint: model\checkpoints\segunetwide_adamax_reducelronplateau_crop256\135_epoch.pt
+logs_path: logs/
+
+datasets:
+  normalize:
+    mean: [0.4941, 0.4605, 0.4085]
+    std: [0.1446, 0.1396, 0.1307]
+
+  train:
+    load_to_ram: true
+    imgs_path: "data/seg_damage_data/train/images/"
+    masks_path: "data/seg_damage_data/train/masks/"
+
+    transforms:
+      colorjitter:
+        p: .2
+        brightness: [.1, .2, .3, .4, .5]
+        contrast: [.1, .2, .3, .4, .5]
+        saturation: [.1, .2, .3, .4, .5]
+        hue: [.1, .2, .3]
+
+      randomposterize:
+        p: .1
+        bits: [4, 6]
+
+      randomadjustsharpness:
+        p: .2
+        sharpness_factor: [4, 6, 8]
+
+      randomequalize:
+        p: .2
+
+      grayscale:
+        p: .1
+        num_output_channels: 3
+
+      randomhorizontalflip:
+        p: .5
+
+      randomverticalflip:
+        p: .5
+
+  test:
+    load_to_ram: true
+    imgs_path: "data/seg_damage_data/test/images/"
+    masks_path: "data/seg_damage_data/test/masks/"
+
+dataloaders:
+  train:
+    batch_size: 1
+    shuffle: true
+    num_workers: 2
+    pin_memory: true
+    drop_last: false
+
+  test:
+    batch_size: 1
+    shuffle: false
+    drop_last: false
+
+nns:
+  metrics: [bacc, broc-auc, dice]
+
+  criterion:
+    bce:
+      pos_weight: [10.27]
+
+  models:
+    unetwide:
+      in_channels: 3 # DO NOT CHANGE!
+      out_channels: 1 # DO NOT CHANGE!
+      activation_function: relu
+
+      optimizer:
+        name: adamax
+        lr: 1e-3
+
+      scheduler:
+        scheme: ReduceLROnPlateau
+        factor: .1
+        patience: 15
+        cooldown: 10
+        threshold: 1e-6
+        eps: 1e-12

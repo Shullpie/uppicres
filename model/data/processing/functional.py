@@ -2,7 +2,7 @@
 import torch
 import torchvision.transforms as T
 from typing import Iterable, Literal
-from torchvision.transforms.functional import crop  #TODO change to T.Crop
+from torchvision.transforms.functional import crop
 
 from utils.types import (
     ImageTorch, MaskTorch,
@@ -11,11 +11,9 @@ from utils.types import (
 )
 
 
-def crop_into_nxn(
-        img: ImageTorch | MaskTorch, 
-        n: int
-) -> tuple[CroppedImageTorch | CroppedMaskTorch, tuple[int, int]]:
-    
+def crop_into_nxn(img: ImageTorch | MaskTorch, 
+                  n: int
+                  ) -> tuple[CroppedImageTorch | CroppedMaskTorch, tuple[int, int]]:
     _, img_h, img_w = img.shape
     if n is None or (img_h == img_w == n):
         return img, (1, 1)
@@ -30,11 +28,9 @@ def crop_into_nxn(
     return torch.stack(patches), (img_w//256, img_h//256)
 
 
-def resize_multiples_n(
-        img: ImageTorch | ImagePIL, 
-        n: int
-) -> ImageTorch | ImagePIL:
-    
+def resize_multiples_n(img: ImageTorch | ImagePIL, 
+                       n: int
+                       ) -> ImageTorch | ImagePIL:
     _, img_h, img_w = img.shape
     if n is None or (img_w % n == 0) and (img_h % n == 0):
         return img
@@ -57,13 +53,11 @@ def resize_multiples_n(
     return img
 
 
-def prepare_img(
-        img: ImageTorch, 
-        mean: int | Iterable, 
-        std: int | Iterable,
-        crop: Literal[256] | Literal[512]
-) -> ImageTorch:  # TODO Lireral, optional mean,std
-    
+def prepare_img(img: ImageTorch, 
+                mean: int | Iterable, 
+                std: int | Iterable,
+                crop: Literal[256] | Literal[512]
+                ) -> ImageTorch:  # TODO Lireral, optional mean,std
     if mean is not None and std is not None:
         img = T.Normalize(mean, std)(img)
 
@@ -72,11 +66,9 @@ def prepare_img(
     return img, dims
 
 
-def cat_patches(
-        patches: CroppedMaskTorch, 
-        dims: tuple[int, int]
-) -> MaskTorch:
-    
+def cat_patches(patches: CroppedMaskTorch, 
+                dims: tuple[int, int]
+                ) -> MaskTorch:
     res = []
     x, y = dims
     for i in range(0, y*x, y):

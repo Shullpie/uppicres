@@ -1,10 +1,4 @@
-from typing import NamedTuple
-from torch.utils.data import Dataset
-
-
-class Datasets(NamedTuple):
-    train_set: Dataset
-    test_set: Dataset
+from utils.types import Datasets
 
 
 def  create_datasets(options: dict) -> Datasets:

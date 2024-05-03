@@ -1,6 +1,7 @@
 import torch
 from tqdm import tqdm
 import model.modules.models.base_model as bm
+from utils.types import Loss, Metrics
 
 
 class SegModel(bm.BaseModel):
@@ -8,7 +9,7 @@ class SegModel(bm.BaseModel):
     def __init__(self, options: dict) -> None:
         super().__init__(options=options)
 
-    def training_step(self, batch: torch.Tensor) -> tuple[bm.Loss, bm.Metrics]:
+    def training_step(self, batch: torch.Tensor) -> tuple[Loss, Metrics]:
         metrics_dict = {}
         inputs, targets = batch
 
@@ -37,7 +38,7 @@ class SegModel(bm.BaseModel):
 
         return (loss.item(), metrics_dict)
 
-    def train_epoch(self, epoch) -> tuple[bm.Loss, bm.Metrics]:
+    def train_epoch(self, epoch) -> tuple[Loss, Metrics]:
         self.model.train()
 
         loss_by_epoch = 0
@@ -56,7 +57,7 @@ class SegModel(bm.BaseModel):
         return (loss_by_epoch, metrics_by_epoch)
 
     @torch.inference_mode()
-    def testing_step(self, batch) -> tuple[bm.Loss, bm.Metrics]:
+    def testing_step(self, batch) -> tuple[Loss, Metrics]:
         metrics_dict = {}
         inputs, targets = batch
 
@@ -79,7 +80,7 @@ class SegModel(bm.BaseModel):
 
         return (loss.item(), metrics_dict)
 
-    def test_epoch(self, epoch) -> tuple[bm.Loss, bm.Metrics]:
+    def test_epoch(self, epoch) -> tuple[Loss, Metrics]:
         self.model.eval()
 
         loss_by_epoch = 0

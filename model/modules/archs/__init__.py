@@ -3,12 +3,10 @@ from typing import Literal
 
 from utils.types import Network
 
-def get_inference_model(
-        inference_options: dict, 
-        task: Literal['clr'] | Literal['seg'],
-        device: str = 'cpu'
-    ) -> Network:
-
+def get_inference_model(inference_options: dict, 
+                        task: Literal['clr'] | Literal['seg'], 
+                        device: str = 'cpu'
+                        ) -> Network:
     options = inference_options['nns']
     crop = inference_options['crop']
     model = None

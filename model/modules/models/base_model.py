@@ -1,6 +1,5 @@
 import os
 import logging
-from typing import TypeAlias
 
 import torch
 import matplotlib
@@ -11,11 +10,8 @@ from model.modules.optim import optimizers
 from model.modules.optim import schedulers
 from model.modules.models import get_train_model
 from model.data.dataloaders import dataloaders
-
+from utils.types import Metrics
 matplotlib.use('Agg')
-
-Loss: TypeAlias = float
-Metrics: TypeAlias = dict[str, float]
 
 
 class BaseModel():
@@ -34,11 +30,11 @@ class BaseModel():
         self.transform_data_every_n_epoch = options.get('transform_data_every_n_epoch', 0)
 
         # optimization and metrics
-        self.nns_options = options['nns'][self.task]['models'][self.model.name]
+        self.nns_options = options['nns']['models'][self.model.name]
         self.optimizer = optimizers.get_optimizer(self.model.parameters(), self.nns_options.get('optimizer'))
         self.scheduler = schedulers.get_scheduler(self.optimizer, self.nns_options.get('scheduler'))
-        self.criterion = metrics.get_criterion(options['nns'][self.task]['criterion'], self.device)
-        self.metrics_dict = metrics.get_metrics(options['nns'][self.task]['metrics'], self.device)
+        self.criterion = metrics.get_criterion(options['nns']['criterion'], self.device)
+        self.metrics_dict = metrics.get_metrics(options['nns']['metrics'], self.device)
 
         # logging
         self.logs_path = options.get('logs_path')
@@ -112,7 +108,8 @@ class BaseModel():
     def _send_telegram_message(self, 
                                epoch: int,
                                train_metrics_dict: Metrics,
-                               test_metrics_dict: Metrics):
+                               test_metrics_dict: Metrics
+                               ) -> None:
         self._save_chart('temp/chart.png')
         train_metrics_str = '\n'.join(map(lambda x: f'{x[0]}: {x[1]:.3f}', train_metrics_dict.items()))
         test_metrics_str = '\n'.join(map(lambda x: f'{x[0]}: {x[1]:.3f}', test_metrics_dict.items()))
@@ -173,7 +170,8 @@ class BaseModel():
     @staticmethod
     @torch.inference_mode()
     def _accumulate_metrics(total_metrics_dict: dict[str, float], 
-                            batch_metric_dict: dict[str, float]) -> dict[str, float]:
+                            batch_metric_dict: dict[str, float]
+                            ) -> dict[str, float]:
         if not total_metrics_dict:
             return batch_metric_dict.copy()
         

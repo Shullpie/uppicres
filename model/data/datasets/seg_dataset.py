@@ -1,4 +1,4 @@
-from typing import Optional, Literal
+from typing import Literal
 from PIL import Image
 
 from model.data.processing import functional, augments
@@ -8,10 +8,8 @@ from utils.types import ImageTorch, MaskTorch
 
 class SegDataSet(BaseDataSet):
 
-    def __init__(self,
-                 dataset_type_options: dict,
-                 crop: Optional[Literal[256] | Literal[512]]) -> None:
-        super().__init__(dataset_type_options, crop)
+    def __init__(self, options: dict, mode: Literal['train'] | Literal['test']) -> None:
+        super().__init__(options, mode)
 
     def __getitem__(self, idx: int) -> tuple[ImageTorch, MaskTorch]:
         img, mask = None, None

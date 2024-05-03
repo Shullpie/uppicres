@@ -1,24 +1,16 @@
-from typing import Callable, NamedTuple, TypeAlias, Optional
+from typing import Optional
 
-import torch
 import torchvision.transforms as T
 from numpy.random import choice, uniform
 
-
-Transformation: TypeAlias = Callable
-Img: TypeAlias = torch.Tensor
-Mask: TypeAlias = torch.Tensor
-ImgOrMask: TypeAlias = torch.Tensor
-
-
-class PTransformation(NamedTuple):
-    p: float
-    transformation: Transformation[[ImgOrMask], ImgOrMask]
+from utils.types import (
+    Transformation, PTransformation,
+    ImageTorch, MaskTorch,
+    ImagePIL, MaskPIL
+)
 
 
-def _get_transforms_list(
-        transforms_options: dict[str, dict]) -> list[Transformation | PTransformation]:
-    
+def _get_transforms_list(transforms_options: dict[str, dict]) -> list[Transformation | PTransformation]:
     transforms_list: list[Transformation | PTransformation] = []
     for key, options in transforms_options.items():
         key = key.lower()
@@ -87,8 +79,10 @@ def _get_transforms_list(
     return transforms_list
 
 
-def _transform(img: Img, mask: Mask, 
-               transformation: Transformation | PTransformation) -> tuple[Img, Mask]:
+def _transform(img: ImageTorch | ImagePIL, 
+               mask: MaskTorch | MaskPIL, 
+               transformation: Transformation | PTransformation
+               ) -> tuple[ImageTorch | ImagePIL, MaskTorch | MaskPIL]:
     if type(transformation) is PTransformation:
         if uniform(low=0, high=1) < transformation.p:
             img = transformation.transformation(img)
@@ -100,15 +94,19 @@ def _transform(img: Img, mask: Mask,
     return img, mask
       
 
-def apply_transforms(img: Img, mask: Mask, 
+def apply_transforms(img: ImageTorch | ImagePIL, mask: MaskTorch | MaskPIL, 
                      transforms_list: list[Transformation | PTransformation],
                      normalize: Optional[dict[str, list]]
-                     ) -> tuple[Img, Mask]:
+                     ) -> tuple[ImageTorch | ImagePIL, MaskTorch | MaskPIL]:
     if transforms_list:
         for transformation in transforms_list:
             img, mask = _transform(img, mask, transformation)
-    img = T.ToTensor()(img)
-    mask = T.ToTensor()(mask)
+
+    if isinstance(img, ImagePIL):
+        img = T.ToTensor()(img)
+    if isinstance(mask, MaskPIL):
+        mask = T.ToTensor()(mask)
+
     if normalize is not None:
         img = T.Normalize(mean=normalize['mean'], std=normalize['std'])(img)
     return img, mask

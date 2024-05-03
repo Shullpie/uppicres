@@ -6,34 +6,39 @@ from torchvision.transforms.functional import hflip
 
 from model.modules.optim import activation_funcs
 from model.data.processing import functional
-from utils.types import MaskTorch
+from utils.types import MaskTorch, ImageTorch
 
 
 class BatchDoubleConv(nn.Module):
     def __init__(self,
                  in_channels: int,
                  out_channels: int,
-                 activation_function):
+                 activation_function
+                 ) -> None:
         super().__init__()
 
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels,
-                      out_channels=out_channels,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=False),
+            nn.Conv2d(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False
+            ),
 
             nn.BatchNorm2d(out_channels),
 
             activation_function,
 
-            nn.Conv2d(in_channels=out_channels,
-                      out_channels=out_channels,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=False),
+            nn.Conv2d(
+                in_channels=out_channels,
+                out_channels=out_channels,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False
+            ),
 
             nn.BatchNorm2d(out_channels),
 
@@ -51,7 +56,8 @@ class UnetWide(nn.Module):
                  img_size: Literal[256] | Literal[512] | Literal[1024],
                  in_channels: Optional[int] = None,
                  out_channels: Optional[int] = None,
-                 activation_function: Optional[Callable] = None) -> None:
+                 activation_function: Optional[Callable] = None
+                 ) -> None:
         super().__init__()
         self.downs = nn.ModuleList()
         self.ups = nn.ModuleList()
@@ -88,19 +94,16 @@ class UnetWide(nn.Module):
             x = self.pool(x)
 
         # Bottleneck
-        # crop 512: 1024x32x32 -> 2048x32x32
         x = self.bottleneck(x)
         skip_connections = skip_connections[::-1]
+
         # Up
-        # crop 512: 2048x32x32 -> 1024x32x32 -> 512x64x64 -> 256x128x128 -> 128x256x256 -> 64x512x512
         for idx in range(0, len(self.ups)-2, 2):
             x = self.ups[idx](x)
             skip_connection = skip_connections[idx//2]
             x = torch.cat((skip_connection, x), dim=1)
             x = self.ups[idx+1](x)
         x = self.ups[-1](x)
-        # Final
-        # crop 512: 64x512x512 -> 1x512x512
 
         return self.final_conv(x)
 
@@ -142,12 +145,11 @@ class UnetWide(nn.Module):
             bias=False
         )
         
-    def inference(
-            self, 
-            user_img: torch.Tensor, 
-            inference_options: dict, 
-            device: str
-    ) -> MaskTorch:
+    def inference(self, 
+                  user_img: ImageTorch, 
+                  inference_options: dict, 
+                  device: str
+                  ) -> MaskTorch:
         self.eval()
         res = []
         n_patches = len(user_img)

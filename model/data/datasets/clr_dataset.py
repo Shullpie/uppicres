@@ -1,8 +1,7 @@
-from typing import Optional, Literal
-
 import torch
 import torchvision.transforms as T
 from PIL import Image
+from typing import Optional, Literal
 
 from model.data.processing import functional, augments
 from model.data.datasets.base_dataset import BaseDataSet, ImgTorch
@@ -12,7 +11,8 @@ class ClrDataSet(BaseDataSet):
 
     def __init__(self,
                  dataset_type_options: dict,
-                 crop: Optional[Literal[256] | Literal[512]]) -> None:
+                 crop: Optional[Literal[256] | Literal[512]]
+                 ) -> None:
         super().__init__(dataset_type_options, crop)
 
     def __getitem__(self, idx: int) -> tuple[ImgTorch, ImgTorch]:

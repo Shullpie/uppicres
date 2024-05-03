@@ -37,7 +37,7 @@ class BaseModel():
         self.metrics_dict = metrics.get_metrics(options['nns']['metrics'], self.device)
 
         # logging
-        self.logs_path = options.get('logs_path')
+        self.checkpoints_path = options.get('checkpoints_path')
         self.logger = logging.getLogger(__name__)    
         self.make_checkpoint_every_n_epoch = options.get('make_checkpoint_every_n_epoch', 0)
         self.telegram_message = options.get('telegram_send_logs', False)
@@ -66,14 +66,14 @@ class BaseModel():
             metric.reset()
     
     def _save_model_state(self, epoch: int, chart: bool = False) -> None:
-        path = self.logs_path + \
-            f'checkpoints/{self.model.name}_{type(self.optimizer).__name__}_{type(self.scheduler).__name__}' + \
+        path = self.checkpoints_path + \
+            f'/{self.model.name}_{type(self.optimizer).__name__}_{type(self.scheduler).__name__}' + \
             f'_crop{self.crop}/'
         path = path.lower()
         if not os.path.isdir(path):
             os.makedirs(path, exist_ok=True)
         if chart:
-            self._save_chart(path.split('/', 1)[1] + 'chart.png')
+            self._save_chart(path + 'chart.png')
         try:
             torch.save(
                 {
@@ -99,7 +99,7 @@ class BaseModel():
         plt.legend(['train', 'test'])
 
         try:
-            plt.savefig(self.logs_path + path)
+            plt.savefig(path)
         except Exception as ex:
             self.logger.error(ex, exc_info=True)
         
@@ -110,7 +110,7 @@ class BaseModel():
                                train_metrics_dict: Metrics,
                                test_metrics_dict: Metrics
                                ) -> None:
-        self._save_chart('temp/chart.png')
+        self._save_chart('logs/temp/chart.png')
         train_metrics_str = '\n'.join(map(lambda x: f'{x[0]}: {x[1]:.3f}', train_metrics_dict.items()))
         test_metrics_str = '\n'.join(map(lambda x: f'{x[0]}: {x[1]:.3f}', test_metrics_dict.items()))
 
@@ -150,7 +150,10 @@ class BaseModel():
             '> Test DataSet\n'
             f'Number of images: {len(self.test_loader.dataset)}\n\n\n'
             '---=|NN\'s info|=---\n'
-            f'Model\'s name: {self.model.name}\n\n'
+            f'Model\'s name: {self.model.name}\n'
+            f'Tranform data every n epoches: {self.transform_data_every_n_epoch}\n'
+            f'Make checpoints every n epoches: {self.make_checkpoint_every_n_epoch}\n'
+            f'Send Telegram logs: {self.telegram_message}\n\n'
             f'Criterion: {self.criterion}\n'
             f'Metrics: {self.metrics_dict.values()}\n'
             f'> Optimizer: {self.optimizer}\n\n'

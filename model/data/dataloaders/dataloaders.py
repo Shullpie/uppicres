@@ -12,6 +12,6 @@ class Dataloaders(NamedTuple):
 def create_dataloaders(options: dict) -> Dataloaders:
     task = options['task']
     train, test = create_datasets(options)
-    train_loader = DataLoader(train, **options['datasets'][f'{task}_dataset']['dataloader']['train'])
-    test_loader = DataLoader(test, **options['datasets'][f'{task}_dataset']['dataloader']['test'])
+    train_loader = DataLoader(train, **options['dataloaders']['train'])
+    test_loader = DataLoader(test, **options['dataloaders']['test'])
     return Dataloaders(train_loader=train_loader, test_loader=test_loader)

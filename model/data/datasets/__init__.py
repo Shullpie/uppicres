@@ -7,8 +7,8 @@ class Datasets(NamedTuple):
     test_set: Dataset
 
 
-def  create_datasets(main_options: dict) -> Datasets:
-    task = main_options["task"]
+def  create_datasets(options: dict) -> Datasets:
+    task = options["task"]
     if task == "seg":
         from model.data.datasets.seg_dataset import SegDataSet as DS
     elif task == "clr":
@@ -16,9 +16,7 @@ def  create_datasets(main_options: dict) -> Datasets:
     else:
         raise NotImplementedError(f"Task {task} is not recognized.")
 
-    train_set = DS(dataset_type_options=main_options['datasets'][f'{task}_dataset']['train'],
-                   crop=main_options['crop'])
-    test_set = DS(main_options['datasets'][f'{task}_dataset']["test"],
-                  crop=main_options['crop'])
+    train_set = DS(options=options, mode='train')
+    test_set = DS(options=options, mode='test')
 
     return Datasets(train_set, test_set)

@@ -2,12 +2,12 @@ def get_train_model(options: dict, arc: str = None):
     task = options.get('task', None)
     if task == 'seg':
         from model.modules.models.seg_model import SegModel as M
+        return M(options=options)
     elif task == 'clr':
         pass
     else:
         # TODO LOGGER raise NotImplementedError(f'Task "{task}" is not recognized. Check your config file.')
         pass
-    return M(options=options)
             
             
 def train(options):

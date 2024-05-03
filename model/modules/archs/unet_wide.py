@@ -45,7 +45,7 @@ class BatchDoubleConv(nn.Module):
 
 
 class UnetWide(nn.Module):
-    name = "UnetWide"
+    name = "unetwide"
 
     def __init__(self,
                  img_size: Literal[256] | Literal[512] | Literal[1024],

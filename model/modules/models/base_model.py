@@ -184,8 +184,8 @@ class BaseModel():
 
     @staticmethod   
     @torch.inference_mode() 
-    def _get_mean_metrics_dict(metrics: Metrics, dataset_length: int) -> Metrics:
+    def _get_mean_metrics_dict(metrics: Metrics, n_batches: int) -> Metrics:
         for key in metrics.keys():
-            metrics[key] /= dataset_length
+            metrics[key] /= n_batches
         return metrics
     

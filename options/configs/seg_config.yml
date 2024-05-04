@@ -1,14 +1,15 @@
 mode: train
 task: seg
-nn_model: segnet
+nn_model: unetwide
 device: cuda
 crop: 256
 epoch: 1000
-transform_data_every_n_epoch: 5
-make_checkpoint_every_n_epoch: 1
+transform_data_every_n_epoch: 10
+make_checkpoint_every_n_epoch: 5
 
 telegram_send_logs: True
-checkpoint: 0  #model/checkpoints/segunetwide_adamax_reducelronplateau_crop256/135_epoch.pt
+checkpoint: model\checkpoints\unetwide_adamax_reducelronplateau_crop256\151_epoch.pt  
+#model/checkpoints/segunetwide_adamax_reducelronplateau_crop256/135_epoch.pt
 checkpoints_path: model/checkpoints
 
 datasets:
@@ -88,7 +89,7 @@ nns:
       scheduler:
         scheme: ReduceLROnPlateau
         factor: .1
-        patience: 15
+        patience: 10
         cooldown: 10
         threshold: 1e-6
         eps: 1e-12
@@ -105,7 +106,7 @@ nns:
       scheduler:
         scheme: ReduceLROnPlateau
         factor: .1
-        patience: 15
-        cooldown: 10
+        patience: 20
+        cooldown: 20
         threshold: 1e-6
         eps: 1e-12

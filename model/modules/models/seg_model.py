@@ -35,7 +35,6 @@ class SegModel(bm.BaseModel):
 
         if self.metrics_dict:
             metrics_dict = self._calc_metrics(prediction=outputs, target=targets)
-
         return (loss.item(), metrics_dict)
 
     def train_epoch(self, epoch) -> tuple[Loss, Metrics]:
@@ -51,9 +50,9 @@ class SegModel(bm.BaseModel):
             if self.metrics_dict:
                 metrics_by_epoch = self._accumulate_metrics(metrics_by_epoch, batch_metrics_dict)
 
-        dataset_lenght = len(self.train_loader.dataset)
-        loss_by_epoch = loss_by_epoch/dataset_lenght
-        metrics_by_epoch = self._get_mean_metrics_dict(metrics_by_epoch, dataset_lenght)
+        n_batches = len(self.train_loader)
+        loss_by_epoch = loss_by_epoch/n_batches
+        metrics_by_epoch = self._get_mean_metrics_dict(metrics_by_epoch, n_batches)
         return (loss_by_epoch, metrics_by_epoch)
 
     @torch.inference_mode()
@@ -93,9 +92,9 @@ class SegModel(bm.BaseModel):
             if self.metrics_dict:
                 metrics_by_epoch = self._accumulate_metrics(metrics_by_epoch, batch_metrics_dict)
 
-        dataset_lenght = len(self.test_loader.dataset)
-        loss_by_epoch = loss_by_epoch/dataset_lenght
-        metrics_by_epoch = self._get_mean_metrics_dict(metrics_by_epoch, dataset_lenght)
+        n_batches = len(self.test_loader)
+        loss_by_epoch = loss_by_epoch/n_batches
+        metrics_by_epoch = self._get_mean_metrics_dict(metrics_by_epoch, n_batches)
         return (loss_by_epoch, metrics_by_epoch)
 
     def fit(self):
@@ -124,3 +123,6 @@ class SegModel(bm.BaseModel):
                 self.train_loader.dataset._change_transforms_list()
 
         self._save_model_state(self.n_epoch, chart=True)
+        self._send_telegram_message(epoch=epoch,
+                                    train_metrics_dict=train_metrics,
+                                    test_metrics_dict=test_metrics)

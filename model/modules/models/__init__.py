@@ -18,6 +18,10 @@ def get_train_model(options: dict) -> Network:
             nn_model = NN(img_size=crop)
             nn_model.init_from_config(options['nns']['models'][model_str])
 
+        elif model_str == 'unet':
+            from model.modules.archs.unet_256 import Unet256 as NN
+            nn_model = NN(options['nns']['models'][model_str])
+
         elif model_str == 'segnet':
             from model.modules.archs.segnet import SegNet as NN
             nn_model = NN()
@@ -26,7 +30,7 @@ def get_train_model(options: dict) -> Network:
 
     elif task == 'clr':
         pass
-        
+
     else:
         raise NotImplementedError(f'Task "{task}" is not supported. Check your config file.')
     return nn_model

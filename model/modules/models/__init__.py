@@ -18,7 +18,7 @@ def get_train_model(options: dict) -> Network:
             nn_model = NN(img_size=crop)
             nn_model.init_from_config(options['nns']['models'][model_str])
 
-        elif model_str == 'unet':
+        elif model_str == 'unet256':
             from model.modules.archs.unet_256 import Unet256 as NN
             nn_model = NN(options['nns']['models'][model_str])
 

@@ -1,15 +1,18 @@
 mode: train
 task: seg
-nn_model: unetwide
+nn_model: unet256
 device: cuda
 crop: 256
-epoch: 1000
-transform_data_every_n_epoch: 10
+epoch: 350
+transform_data_every_n_epoch: 5
 make_checkpoint_every_n_epoch: 5
 
 telegram_send_logs: True
-checkpoint: model\checkpoints\unetwide_adamax_reducelronplateau_crop256\151_epoch.pt  
-#model/checkpoints/segunetwide_adamax_reducelronplateau_crop256/135_epoch.pt
+checkpoint: model\checkpoints\unet256_adamax_reducelronplateau_crop256\106_epoch.pt
+# model\checkpoints\unet256_adamax_reducelronplateau_crop256\25_epoch.pt
+# model\checkpoints\segnet_adam_reducelronplateau_crop256\320_epoch.pt
+# model\checkpoints\unetwide_adamax_reducelronplateau_crop256\151_epoch.pt  
+# model/checkpoints/segunetwide_adamax_reducelronplateau_crop256/135_epoch.pt
 checkpoints_path: model/checkpoints
 
 datasets:
@@ -94,7 +97,7 @@ nns:
         threshold: 1e-6
         eps: 1e-12
 
-    unet:
+    unet256:
       in_channels: 3 # DO NOT CHANGE!
       out_channels: 1 # DO NOT CHANGE!
       activation_function: relu

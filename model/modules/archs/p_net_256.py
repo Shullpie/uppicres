@@ -1,11 +1,30 @@
-from typing import Optional, Callable, Literal
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torchvision import models
 from torch_pconv import PConv2d
 
 from model.modules.optim import activation_funcs
+
+
+class VGGFeatureExtractor(nn.Module):
+    def __init__(self):
+        super().__init__()
+        vgg16 = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_FEATURES)
+        self.enc_1 = nn.Sequential(*vgg16.features[:5])
+        self.enc_2 = nn.Sequential(*vgg16.features[5:10])
+        self.enc_3 = nn.Sequential(*vgg16.features[10:17])
+
+        # fix the encoder
+        for i in range(3):
+            for param in getattr(self, 'enc_{:d}'.format(i + 1)).parameters():
+                param.requires_grad = False
+
+    def forward(self, image):
+        results = [image]
+        for i in range(3):
+            func = getattr(self, 'enc_{:d}'.format(i + 1))
+            results.append(func(results[-1]))
+        return results[1:]
 
 
 class PConvNet256(nn.Module):
@@ -70,7 +89,6 @@ class PConvNet256(nn.Module):
         # 67x256x256 -> 3x256x256
         self.block_14 = PConv2d(in_channels=67, out_channels=3, kernel_size=3, stride=1, padding=1)
 
-
     def forward(self, x, mask=None):
         # 3x256x256 -> 64x128x128
         x_1, m_1 = self.block_1(x, mask)
@@ -103,11 +121,9 @@ class PConvNet256(nn.Module):
         # 512x2x2 -> 512x4x4 -> 1024x4x4 -> 512x4x4
         out = self.upsample(x_7)
         out_mask = self.upsample(m_7)
-        # del x_7, m_7
         out = torch.cat((x_6, out), dim=1)
-        print("1024", out.shape)
         out_mask = torch.cat((m_6, out_mask), dim=1)
-        # del x_6, m_6
+
         out, out_mask = self.block_8(out, out_mask)
         out = self.activation_function_2(self.norm_8(out), negative_slope=0.2)
 
@@ -116,7 +132,6 @@ class PConvNet256(nn.Module):
         out_mask = self.upsample(out_mask)
         out = torch.cat((x_5, out), dim=1)
         out_mask = torch.cat((m_5, out_mask), dim=1)
-        # del x_5, m_5
         out, out_mask = self.block_9(out, out_mask)
         out = self.activation_function_2(self.norm_9(out), negative_slope=0.2)
 
@@ -125,7 +140,6 @@ class PConvNet256(nn.Module):
         out_mask = self.upsample(out_mask)
         out = torch.cat((x_4, out), dim=1)
         out_mask = torch.cat((m_4, out_mask), dim=1)
-        # del x_4, m_4
         out, out_mask = self.block_10(out, out_mask)
         out = self.activation_function_2(self.norm_10(out), negative_slope=0.2)
 
@@ -134,7 +148,6 @@ class PConvNet256(nn.Module):
         out_mask = self.upsample(out_mask)
         out = torch.cat((x_3, out), dim=1)
         out_mask = torch.cat((m_3, out_mask), dim=1)
-        # del x_3, m_3
         out, out_mask = self.block_11(out, out_mask)
         out = self.activation_function_2(self.norm_11(out), negative_slope=0.2)
 

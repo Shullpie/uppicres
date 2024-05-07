@@ -118,6 +118,21 @@ nns:
       in_channels: 3 # DO NOT CHANGE!
       out_channels: 1 # DO NOT CHANGE!
       # activation_function: relu
+      optimizer:
+        name: adam
+        lr: 1e-3
+
+      scheduler:
+        scheme: ReduceLROnPlateau
+        factor: .1
+        patience: 20
+        cooldown: 20
+        threshold: 1e-6
+        eps: 1e-12
+
+    fcn_resnet50:
+      in_channels: 3 # DO NOT CHANGE!
+      out_channels: 1 # DO NOT CHANGE!
 
       optimizer:
         name: adam

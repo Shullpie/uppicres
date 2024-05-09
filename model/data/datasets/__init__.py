@@ -10,7 +10,7 @@ def  create_datasets(options: dict) -> Datasets:
     else:
         raise NotImplementedError(f"Task {task} is not recognized.")
 
-    train_set = DS(options=options, mode='train')
-    test_set = DS(options=options, mode='test')
+    train_set = DS(options, dataset_type='train')
+    test_set = DS(options, dataset_type='test')
 
     return Datasets(train_set, test_set)

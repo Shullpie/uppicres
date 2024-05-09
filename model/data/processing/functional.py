@@ -74,3 +74,10 @@ def cat_patches(patches: CroppedMaskTorch,
     for i in range(0, y*x, y):
         res.append(torch.cat(tuple(patches[i:i+y]), dim=-1))
     return torch.cat(tuple(res), dim=-2)
+
+
+def unnormalize(img, mean, std):
+    invTrans = T.Compose([T.Normalize(mean=[0., 0., 0.], std=[1/s for s in std]),
+                          T.Normalize(mean=[-m for m in mean], std=[1., 1., 1.])])
+
+    return invTrans(img)

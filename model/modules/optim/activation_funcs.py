@@ -5,8 +5,8 @@ def get_activation_function(func_name: str):
     elif func_name == "gelu":
         from torch.nn import GELU
         return GELU()
-    elif func_name == 'leaky_relu':
+    elif func_name == 'leakyrelu':
         from torch.nn import LeakyReLU
-        return LeakyReLU(negative_slope=0.2, inplace=True)  #TODO check ns
+        return LeakyReLU(0.2, inplace=True)  #TODO check ns
     else:
         raise NotImplementedError(f'Activation function "{func_name}" is not recognized.')

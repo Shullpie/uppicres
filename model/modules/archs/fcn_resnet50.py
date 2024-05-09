@@ -1,6 +1,7 @@
 import torch.nn as nn
 from torchvision.models.segmentation import fcn_resnet50
 
+
 class FCNResNet(nn.Module):
     name = 'fcn_resnet50'
 

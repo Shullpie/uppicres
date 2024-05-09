@@ -1,14 +1,16 @@
 mode: train
 task: seg
-nn_model: unet256
+nn_model: segnet
 device: cuda
 crop: 256
-epoch: 350
-transform_data_every_n_epoch: 5
+epoch: 175
+transform_data_every_n_epoch: 10
 make_checkpoint_every_n_epoch: 5
 
 telegram_send_logs: True
-checkpoint: model\checkpoints\unet256_adamax_reducelronplateau_crop256\106_epoch.pt
+checkpoint: model\checkpoints\segnet_adam_reducelronplateau_crop256\25_epoch.pt
+# model\checkpoints\fcn_resnet50_adam_reducelronplateau_crop256\160_epoch.pt
+# model\checkpoints\unet256_adamax_reducelronplateau_crop256\106_epoch.pt
 # model\checkpoints\unet256_adamax_reducelronplateau_crop256\25_epoch.pt
 # model\checkpoints\segnet_adam_reducelronplateau_crop256\320_epoch.pt
 # model\checkpoints\unetwide_adamax_reducelronplateau_crop256\151_epoch.pt  
@@ -125,7 +127,7 @@ nns:
       scheduler:
         scheme: ReduceLROnPlateau
         factor: .1
-        patience: 20
+        patience: 10
         cooldown: 20
         threshold: 1e-6
         eps: 1e-12

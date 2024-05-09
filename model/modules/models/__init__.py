@@ -20,7 +20,7 @@ def get_train_model(options: dict) -> Network:
 
         elif model_str == 'segnet':
             from model.modules.archs.segnet import SegNet as NN
-            nn_model = NN(nn_options)
+            nn_model = NN()
             
         elif model_str == 'fcn_resnet50':
             from model.modules.archs.fcn_resnet50 import FCNResNet as NN
@@ -29,8 +29,11 @@ def get_train_model(options: dict) -> Network:
             raise NotImplementedError(f'NN "{model_str}" is not recognized. Check your config file.')
 
     elif task == 'clr':
-        pass
-
+        if model_str == 'pnet_256':
+            from model.modules.archs.pnet_256 import PConvNet256 as NN
+            nn_model = NN(nn_options)
+        else:
+            raise NotImplementedError(f'NN "{model_str}" is not recognized. Check your config file.')
     else:
         raise NotImplementedError(f'Task "{task}" is not supported. Check your config file.')
     return nn_model

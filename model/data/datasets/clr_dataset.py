@@ -28,7 +28,7 @@ class ClrDataSet(BaseDataSet):
                                                    mask=mask,
                                                    transforms_list=self.transforms_list,
                                                    normalize=self.normalize)
-        mask = T.RandomRotation((0, 180))(mask)
+        mask = T.RandomRotation((0, 45))(mask)
         mask = T.RandomInvert(p=1)(mask)
         return gt_image*mask, mask, gt_image
     

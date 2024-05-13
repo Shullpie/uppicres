@@ -117,8 +117,8 @@ class BaseModel():
         try:
             self.logger.info(
                 f'*📊Epoch {epoch}/{self.n_epoch}*\n'
-                f'*🔴Train metrics:*\n_Loss: {self.train_losses[-1]:.3f}\n{train_metrics_str}_\n\n'
-                f'*🟢Test metrics:*\n_Loss: {self.test_losses[-1]:.3f}\n{test_metrics_str}_\n\n'
+                f'*🔴Train metrics:*\n_Loss: {self.train_losses[-1]:.6f}\n{train_metrics_str}_\n\n'
+                f'*🟢Test metrics:*\n_Loss: {self.test_losses[-1]:.6f}\n{test_metrics_str}_\n\n'
                 '*⚙️Training params: *' 
                 f'*LR: * {self.scheduler._last_lr}'
                 '%'

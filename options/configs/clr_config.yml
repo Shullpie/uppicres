@@ -8,13 +8,13 @@ transform_data_every_n_epoch: 10
 make_checkpoint_every_n_epoch: 5
 
 telegram_send_logs: True
-checkpoint: 0
+checkpoint: model\checkpoints\pnet_256_adam_reducelronplateau_crop256\80_epoch.pt
 checkpoints_path: model/checkpoints
 
 datasets:
   normalize:
-    mean: [0.5066, 0.4536, 0.4107]
-    std: [0.2372, 0.2306, 0.2290]
+    mean: [0.4784, 0.4460, 0.4028]
+    std: [0.2293, 0.2237, 0.2249]
 
   train:
     load_to_ram: false
@@ -23,25 +23,17 @@ datasets:
 
     transforms:
       colorjitter:
-        p: .2
-        brightness: [.1, .2, .3, .4]
-        contrast: [.1, .2, .3, .4]
-        saturation: [.1, .2, .3, .4]
+        p: .05
+        brightness: [.1, .2, .3]
+        contrast: [.1, .2, .3]
+        saturation: [.1, .2, .3]
         hue: [.1, .2]
 
-      randomposterize:
-        p: .1
-        bits: [4, 6]
-
-      randomadjustsharpness:
-        p: .2
-        sharpness_factor: [4, 6]
-
       randomequalize:
-        p: .2
+        p: .1
 
       grayscale:
-        p: .3
+        p: .25
         num_output_channels: 3
 
       randomhorizontalflip:
@@ -51,7 +43,7 @@ datasets:
         p: .5
 
   test:
-    load_to_ram: true
+    load_to_ram: false
     imgs_path: "data/clr_damage_data/test/images/"
     masks_path: "data/clr_damage_data/test/masks/"
 
@@ -71,16 +63,16 @@ dataloaders:
 
 nns:
   metrics:
-    [ssim, mse]
+    [ssim, mse, psnr]
 
   criterion:
     inpainting:
       lambdas:
-        valid: 1.0 
+        valid: 1
         hole: 6.0 
-        tv: 0.1
-        prc: 0.05 
-        style: 120.0
+        tv: 0.05
+        prc: 0.03
+        style: 3
 
 
   models:
@@ -91,12 +83,16 @@ nns:
       optimizer:
         name: adam
         lr: 1e-3
+      
+      # scheduler:
+      #   scheme: exponentiallr
+      #   gamma: 0.95
 
       scheduler:
         scheme: ReduceLROnPlateau
-        factor: .2
-        patience: 15
-        cooldown: 10
+        factor: .1
+        patience: 5
+        cooldown: 5
         threshold: 1e-6
         eps: 1e-12
       

@@ -16,9 +16,10 @@ def train(options):
     if options['checkpoint']:
         model.load_model_from_checkpoint(options['checkpoint'])
         # for g in model.optimizer.param_groups:
-        #     g['lr'] = 0.0001
-        # model.scheduler._last_lr[0] = 1e-4
-        # model.scheduler.patience = 12
+        #     g['lr'] = 1e-5
+        # model.scheduler._last_lr[0] = 1e-5
+        # model.scheduler.patience = 5
+        # model.scheduler.factor = 0.3
     model.fit()
 
         

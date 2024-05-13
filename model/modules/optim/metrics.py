@@ -2,9 +2,10 @@ from typing import Callable
 import torch
 from torch.nn import BCEWithLogitsLoss
 from torchmetrics import Dice
+from torchmetrics import MeanSquaredError as MSE
 from torchmetrics.classification import BinaryAccuracy, BinaryAUROC
 from torchmetrics.image import StructuralSimilarityIndexMeasure as SSIM
-from torchmetrics import MeanSquaredError as MSE
+from torchmetrics.image import PeakSignalNoiseRatio as PSNR
 
 from model.modules.optim.inpainting_loss import InpaintingLoss
 
@@ -22,6 +23,8 @@ def get_metrics(metrics_list: list[str], device: str) -> dict[str, Callable]:
         metrics_dict['ssim'] = SSIM().to(device)
     if 'mse' in metrics_list:
         metrics_dict['mse'] = MSE().to(device)
+    if 'psnr' in metrics_list:
+        metrics_dict['psnr'] = PSNR().to(device)
 
     return metrics_dict
 

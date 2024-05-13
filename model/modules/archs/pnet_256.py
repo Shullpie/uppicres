@@ -150,87 +150,156 @@ class PConvNet256(nn.Module):
     def forward(self, x, mask=None):
         # 3x256x256 -> 64x128x128
         x_1, m_1 = self.block_1(x, mask)
-        x_1 = self.activation_function_1(x_1)
+        x_1_n = self.activation_function_1(x_1)
 
         # 64x128x128 -> 128x64x64
-        x_2, m_2 = self.block_2(x_1, m_1)
-        x_2 = self.activation_function_1(self.norm_2(x_2))
+        x_2, m_2 = self.block_2(x_1_n, m_1)
+        x_2_n = self.activation_function_1(self.norm_2(x_2))
 
         # 128x64x64 -> 256x32x32
-        x_3, m_3 = self.block_3(x_2, m_2)
-        x_3 = self.activation_function_1(self.norm_3(x_3))
+        x_3, m_3 = self.block_3(x_2_n, m_2)
+        x_3_n = self.activation_function_1(self.norm_3(x_3))
 
         # 256x32x32 -> 512x16x16
-        x_4, m_4 = self.block_4(x_3, m_3)
-        x_4 = self.activation_function_1(self.norm_4(x_4))
+        x_4, m_4 = self.block_4(x_3_n, m_3)
+        x_4_n = self.activation_function_1(self.norm_4(x_4))
         
         # 512x16x16 -> 512x8x8
-        x_5, m_5 = self.block_5(x_4, m_4)
-        x_5 = self.activation_function_1(self.norm_4(x_5))
+        x_5, m_5 = self.block_5(x_4_n, m_4)
+        x_5_n = self.activation_function_1(self.norm_5(x_5))
 
         # 512x8x8 -> 512x4x4
-        x_6, m_6 = self.block_6(x_5, m_5)
-        x_6 = self.activation_function_1(self.norm_4(x_6))
+        x_6, m_6 = self.block_6(x_5_n, m_5)
+        x_6_n = self.activation_function_1(self.norm_6(x_6))
 
         # 512x4x4 -> 512x2x2
-        x_7, m_7 = self.block_7(x_6, m_6)
-        x_7 = self.activation_function_1(self.norm_4(x_7))
+        x_7, m_7 = self.block_7(x_6_n, m_6)
 
         # 512x2x2 -> 512x4x4 -> 1024x4x4 -> 512x4x4
         out = self.upsample(x_7)
         out_mask = self.upsample(m_7)
-        out = torch.cat((x_6, out), dim=1)
-        out_mask = torch.cat((m_6, out_mask), dim=1)
-
+        out = torch.cat((out, x_6), dim=1)
+        out_mask = torch.cat((out_mask, m_6), dim=1)
         out, out_mask = self.block_8(out, out_mask)
         out = self.activation_function_2(self.norm_8(out))
 
         # 512x4x4 -> 512x8x8 -> 1024x8x8 -> 512x8x8
         out = self.upsample(out)
         out_mask = self.upsample(out_mask)
-        out = torch.cat((x_5, out), dim=1)
-        out_mask = torch.cat((m_5, out_mask), dim=1)
+        out = torch.cat((out, x_5), dim=1)
+        out_mask = torch.cat((out_mask, m_5), dim=1)
         out, out_mask = self.block_9(out, out_mask)
         out = self.activation_function_2(self.norm_9(out))
 
         # 512x8x8 -> 512x16x16 -> 1024x16x16 -> 512x16x16
         out = self.upsample(out)
         out_mask = self.upsample(out_mask)
-        out = torch.cat((x_4, out), dim=1)
-        out_mask = torch.cat((m_4, out_mask), dim=1)
+        out = torch.cat((out, x_4), dim=1)
+        out_mask = torch.cat((out_mask, m_4), dim=1)
         out, out_mask = self.block_10(out, out_mask)
         out = self.activation_function_2(self.norm_10(out))
 
         # 512x16x16 -> 512x32x32 -> 768x32x32 -> 256x32x32
         out = self.upsample(out)
         out_mask = self.upsample(out_mask)
-        out = torch.cat((x_3, out), dim=1)
-        out_mask = torch.cat((m_3, out_mask), dim=1)
+        out = torch.cat((out, x_3), dim=1)
+        out_mask = torch.cat((out_mask, m_3), dim=1)
         out, out_mask = self.block_11(out, out_mask)
         out = self.activation_function_2(self.norm_11(out))
 
         # 256x32x32 -> 256x64x64 -> 384x64x64 -> 128x64x64
         out = self.upsample(out)
         out_mask = self.upsample(out_mask)
-        out = torch.cat((x_2, out), dim=1)
-        out_mask = torch.cat((m_2, out_mask), dim=1)
+        out = torch.cat((out, x_2), dim=1)
+        out_mask = torch.cat((out_mask, m_2), dim=1)
         out, out_mask = self.block_12(out, out_mask)
         out = self.activation_function_2(self.norm_12(out))
 
         # 128x64x64 -> 128x128x128 -> 192x128x128 -> 64x128x128
         out = self.upsample(out)
         out_mask = self.upsample(out_mask)
-        out = torch.cat((x_1, out), dim=1)
-        out_mask = torch.cat((m_1, out_mask), dim=1)
+        out = torch.cat((out, x_1), dim=1)
+        out_mask = torch.cat((out_mask, m_1), dim=1)
         out, out_mask = self.block_13(out, out_mask)
         out = self.activation_function_2(self.norm_13(out))
 
         # 64x128x128 -> 64x256x256 -> 67x256x256 -> 3x256x256
         out = self.upsample(out)
         out_mask = self.upsample(out_mask)
-        out = torch.cat((x, out), dim=1)
-        out_mask = torch.cat((mask, out_mask), dim=1)
+        out = torch.cat((out, x), dim=1)
+        out_mask = torch.cat((out_mask, mask), dim=1)
         out, _ = self.block_14(out, out_mask)
-        # out = torch.tanh(out) # TODO tanh
+        # out = torch.tanh(out)  # TODO tanh
 
         return out
+
+# class PConvNet256(nn.Module):
+#     name = 'pnet_256'
+
+#     def __init__(self, nn_options: dict):
+#         super(PConvNet256, self).__init__()
+#         self.activation_function_1 = activation_funcs.get_activation_function(nn_options['activation_function_1'])
+#         self.activation_function_2 = activation_funcs.get_activation_function(nn_options['activation_function_2'])
+#         self.normalization_layer = nn.BatchNorm2d
+#         self.upsample = nn.UpsamplingNearest2d(scale_factor=2.0)
+
+#         self.block_0 = PartialConv2d(in_channels=3, out_channels=64, kernel_size=7, stride=2, padding=3, multi_channel=True, return_mask=True)
+#         self.block_1 = PartialConv2d(in_channels=64, out_channels=128, kernel_size=5, stride=2, padding=2, multi_channel=True, return_mask=True)
+#         self.norm_1 = self.normalization_layer(num_features=128)
+#         self.block_2 = PartialConv2d(in_channels=128, out_channels=256, kernel_size=5, stride=1, padding=2, multi_channel=True, return_mask=True)
+#         self.norm_2 = self.normalization_layer(num_features=256)
+#         self.block_3 = PartialConv2d(in_channels=256, out_channels=256, kernel_size=5, stride=2, padding=2, multi_channel=True, return_mask=True)
+#         self.norm_3 = self.normalization_layer(num_features=256)
+#         self.block_4 = PartialConv2d(in_channels=256, out_channels=128, kernel_size=3, stride=2, padding=1, multi_channel=True, return_mask=True)
+#         self.norm_4 = self.normalization_layer(num_features=128)
+
+#         self.block_6 = PartialConv2d(in_channels=384, out_channels=128, kernel_size=3, padding=1, multi_channel=True, return_mask=True)
+#         self.norm_6 = self.normalization_layer(num_features=128)
+#         self.block_7 = PartialConv2d(in_channels=384, out_channels=128, kernel_size=3, padding=1, multi_channel=True, return_mask=True)
+#         self.norm_7 = self.normalization_layer(num_features=128)
+#         self.block_8 = PartialConv2d(in_channels=192, out_channels=64, kernel_size=3, padding=1, multi_channel=True, return_mask=True)
+#         self.norm_8 = self.normalization_layer(num_features=64)
+#         self.block_9 = PartialConv2d(in_channels=67, out_channels=3, kernel_size=3, padding=1, multi_channel=True, return_mask=True)
+
+#         self.upsample = nn.UpsamplingNearest2d(scale_factor=2.0)
+
+#     def forward(self, x, mask=None):
+#         x_0, m_0 = self.block_0(x, mask)
+#         x_0 = self.activation_function_1(x_0)
+
+#         x_1, m_1 = self.block_1(x_0, m_0)
+#         x_1 = self.activation_function_1(self.norm_1(x_1))
+#         x_2, m_2 = self.block_2(x_1, m_1)
+#         x_2 = self.activation_function_1(self.norm_2(x_2))
+#         x_3, m_3 = self.block_3(x_2, m_2)
+#         x_3 = self.activation_function_1(self.norm_3(x_3))
+#         x_4, m_4 = self.block_4(x_3, m_3)
+#         x_4 = self.activation_function_1(self.norm_4(x_4))
+
+#         out = self.upsample(x_4)
+#         out_mask = self.upsample(m_4)
+#         out = torch.cat((x_3, out), dim=1)
+#         out_mask = torch.cat((m_3, out_mask), dim=1)
+#         out, out_mask = self.block_6(out, out_mask)
+#         out = self.activation_function_2(self.norm_6(out))
+
+#         out = self.upsample(out)
+#         out_mask = self.upsample(out_mask)
+#         out = torch.cat((x_2, out), dim=1)
+#         out_mask = torch.cat((m_2, out_mask), dim=1)
+#         out, out_mask = self.block_7(out, out_mask)
+#         out = self.activation_function_2(self.norm_7(out))
+
+#         out = self.upsample(out)
+#         out_mask = self.upsample(out_mask)
+#         out = torch.cat((x_0, out), dim=1)
+#         out_mask = torch.cat((m_0, out_mask), dim=1)
+#         out, out_mask = self.block_8(out, out_mask)
+#         out = self.activation_function_2(self.norm_8(out))
+
+#         out = self.upsample(out)
+#         out_mask = self.upsample(out_mask)
+#         out = torch.cat((x, out), dim=1)
+#         out_mask = torch.cat((mask, out_mask), dim=1)
+#         out, m_9 = self.block_9(out, out_mask)
+#         return out

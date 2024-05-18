@@ -1,20 +1,30 @@
 name: uppicres
 logs_path: logs/
 device: cuda
-patches_to_device: 4
+patches_to_device: 1
 crop: 256
 
 seg:
   normalize:
     mean: [0.4941, 0.4605, 0.4085]
     std: [0.1446, 0.1396, 0.1307]
-  pos_label_threshold: 0.75
+  pos_label_threshold: 0.4
 
-nns: # DO NOT CHANGE!
-  UnetWide256:
+clr: 
+  normalize:
+    mean: [0.4784, 0.4460, 0.4028]
+    std: [0.2293, 0.2237, 0.2249]
+
+nns:
+  unet256:
     in_channels: 3
     out_channels: 1
     activation_function: "relu"
 
-    path: model\pretrained\UnetWide256.pt
+    path: model\pretrained\unet256.pt
+
+  pnet256:
+    activation_function_1: relu
+    activation_function_2: leakyrelu
+    
   

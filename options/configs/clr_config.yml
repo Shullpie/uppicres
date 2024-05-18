@@ -3,12 +3,12 @@ task: clr
 nn_model: pnet_256
 device: cuda
 crop: 256
-epoch: 1000
+epoch: 250
 transform_data_every_n_epoch: 10
 make_checkpoint_every_n_epoch: 5
 
 telegram_send_logs: True
-checkpoint: model\checkpoints\pnet_256_adam_reducelronplateau_crop256\80_epoch.pt
+checkpoint: model\checkpoints\pnet_256_adam_reducelronplateau_crop256\150_epoch.pt
 checkpoints_path: model/checkpoints
 
 datasets:
@@ -22,16 +22,6 @@ datasets:
     masks_path: "data/clr_damage_data/train/masks/"
 
     transforms:
-      colorjitter:
-        p: .05
-        brightness: [.1, .2, .3]
-        contrast: [.1, .2, .3]
-        saturation: [.1, .2, .3]
-        hue: [.1, .2]
-
-      randomequalize:
-        p: .1
-
       grayscale:
         p: .25
         num_output_channels: 3
@@ -70,23 +60,21 @@ nns:
       lambdas:
         valid: 1
         hole: 6.0 
-        tv: 0.05
-        prc: 0.03
-        style: 3
+        tv: 0.1
+        prc: 0.05
+        style: 120
 
 
   models:
     pnet_256:
       activation_function_1: relu
       activation_function_2: leakyrelu
+      freeze_bn: True
 
       optimizer:
         name: adam
         lr: 1e-3
       
-      # scheduler:
-      #   scheme: exponentiallr
-      #   gamma: 0.95
 
       scheduler:
         scheme: ReduceLROnPlateau

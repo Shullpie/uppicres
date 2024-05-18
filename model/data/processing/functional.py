@@ -1,7 +1,7 @@
 
 import torch
 import torchvision.transforms as T
-from typing import Iterable, Literal
+from typing import Iterable, Literal, Optional
 from torchvision.transforms.functional import crop
 
 from utils.types import (
@@ -25,12 +25,14 @@ def crop_into_nxn(img: ImageTorch | MaskTorch,
     for colomn in range(0, img_h, n):
         for line in range(0, img_w, n):
             patches.append(crop(img, top=colomn, left=line, height=n, width=n))
-    return torch.stack(patches), (img_w//256, img_h//256)
+    return torch.stack(patches), (img_h//256, img_w//256)
 
 
 def resize_multiples_n(img: ImageTorch | ImagePIL, 
                        n: int
                        ) -> ImageTorch | ImagePIL:
+    if isinstance(img, ImagePIL):
+        img = T.ToTensor()(img)
     _, img_h, img_w = img.shape
     if n is None or (img_w % n == 0) and (img_h % n == 0):
         return img
@@ -54,13 +56,15 @@ def resize_multiples_n(img: ImageTorch | ImagePIL,
 
 
 def prepare_img(img: ImageTorch, 
-                mean: int | Iterable, 
-                std: int | Iterable,
-                crop: Literal[256] | Literal[512]
+                mean: Optional[int | Iterable] = None, 
+                std: Optional[int | Iterable] = None,
+                crop: Literal[256] | Literal[512] = 256
                 ) -> ImageTorch:  # TODO Lireral, optional mean,std
+    
+    if isinstance(img, ImagePIL):
+        img = T.ToTensor()(img)
     if mean is not None and std is not None:
         img = T.Normalize(mean, std)(img)
-
     img = resize_multiples_n(img, crop)
     img, dims = crop_into_nxn(img, crop)
     return img, dims

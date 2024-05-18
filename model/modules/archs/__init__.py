@@ -12,17 +12,17 @@ def get_inference_model(inference_options: dict,
     model = None
 
     if task == 'seg':
-        from model.modules.archs.unet_wide import UnetWide as SM
+        from model.modules.archs.unet_256 import Unet256 as SM
         model = SM(
             img_size=crop,
-            in_channels=options[f'UnetWide{crop}']['in_channels'],
-            out_channels=options[f'UnetWide{crop}']['out_channels'],
-            activation_function=options[f'UnetWide{crop}']['activation_function']
+            in_channels=options[f'unet256{crop}']['in_channels'],
+            out_channels=options[f'unet256{crop}']['out_channels'],
+            activation_function=options[f'unet256{crop}']['activation_function']
         )
 
         model = model.to(device)
         model_params = torch.load(
-            inference_options['nns'][f'UnetWide{crop}']['path'],
+            inference_options['nns'][f'unet256{crop}']['path'],
             map_location=device
         )
 

@@ -1,7 +1,7 @@
 
 import torch
 import torchvision.transforms as T
-from typing import Iterable, Literal, Optional
+from typing import Literal
 from torchvision.transforms.functional import crop
 
 from utils.types import (
@@ -16,7 +16,7 @@ def crop_into_nxn(img: ImageTorch | MaskTorch,
                   ) -> tuple[CroppedImageTorch | CroppedMaskTorch, tuple[int, int]]:
     _, img_h, img_w = img.shape
     if n is None or (img_h == img_w == n):
-        return img, (1, 1)
+        return img.unsqueeze(0), (1, 1)
 
     if (img_h % n != 0) or (img_w % n != 0):
         raise ValueError(f'The image side is not divisible by n={n}. h={img_h}, w={img_w}.')
@@ -56,15 +56,11 @@ def resize_multiples_n(img: ImageTorch | ImagePIL,
 
 
 def prepare_img(img: ImageTorch, 
-                mean: Optional[int | Iterable] = None, 
-                std: Optional[int | Iterable] = None,
                 crop: Literal[256] | Literal[512] = 256
                 ) -> ImageTorch:  # TODO Lireral, optional mean,std
     
     if isinstance(img, ImagePIL):
         img = T.ToTensor()(img)
-    if mean is not None and std is not None:
-        img = T.Normalize(mean, std)(img)
     img = resize_multiples_n(img, crop)
     img, dims = crop_into_nxn(img, crop)
     return img, dims
@@ -80,8 +76,15 @@ def cat_patches(patches: CroppedMaskTorch,
     return torch.cat(tuple(res), dim=-2)
 
 
-def unnormalize(img, mean, std):
-    invTrans = T.Compose([T.Normalize(mean=[0., 0., 0.], std=[1/s for s in std]),
-                          T.Normalize(mean=[-m for m in mean], std=[1., 1., 1.])])
+def normalize(img, mean, std):
+    if mean is not None and std is not None:
+        img = T.Normalize(mean, std)(img)
+    return img
 
-    return invTrans(img)
+
+def unnormalize(img, mean, std):
+    if mean is not None and std is not None:
+        invTrans = T.Compose([T.Normalize(mean=[0., 0., 0.], std=[1/s for s in std]),
+                              T.Normalize(mean=[-m for m in mean], std=[1., 1., 1.])])
+        img = invTrans(img)
+    return img

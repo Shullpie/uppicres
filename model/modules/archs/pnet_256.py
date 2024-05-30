@@ -6,6 +6,7 @@ from model.modules.optim import activation_funcs
 from model.data.processing import functional
 from utils.types import MaskTorch, ImageTorch, ImagePIL
 
+
 class PartialConv2d(nn.Conv2d):
     ###############################################################################
     # BSD 3-Clause License
@@ -92,11 +93,14 @@ class PartialConv2d(nn.Conv2d):
 class PConvNet256(nn.Module):
     name = 'pnet256'
 
-    def __init__(self, nn_options: dict):
+    def __init__(self, options: dict):
         super(PConvNet256, self).__init__()
-        self.activation_function_1 = activation_funcs.get_activation_function(nn_options['activation_function_1'])
-        self.activation_function_2 = activation_funcs.get_activation_function(nn_options['activation_function_2'])
-        self.freeze_bn = nn_options.get('freeze_bn', False)
+        self.activation_function_1 = activation_funcs.get_activation_function(options['activation_function_1'])
+        self.activation_function_2 = activation_funcs.get_activation_function(options['activation_function_2'])
+        self.mean = options.get('normalize', None).get('mean')
+        self.std = options.get('normalize', None).get('std')
+        self.patches_to_device = options.get('patches_to_device', 4) 
+        self.freeze_bn = options.get('freeze_bn', False)
         self.normalization_layer = nn.BatchNorm2d
         self.upsample = nn.UpsamplingNearest2d(scale_factor=2.0)
 
@@ -264,35 +268,29 @@ class PConvNet256(nn.Module):
     def inference(self, 
                   user_img: ImageTorch | ImagePIL,
                   mask: MaskTorch, 
-                  inference_options: dict, 
+                  crop: int,
                   device: str
                   ) -> MaskTorch:
         self.eval()
         self = self.to(device)
+
         if mask.shape[0] == 1:
             mask = torch.cat([mask]*3, dim=0)
+
         masked_img = user_img*mask
-        options = inference_options['clr']
-        crop = inference_options.get('crop', None)
-        step = inference_options.get('patches_to_device', 2)
 
-        mean = options.get('normalize', None).get('mean', None)
-        std = options.get('normalize', None).get('std', None)
+        masked_img, dims = functional.prepare_img(img=masked_img, 
+                                                  crop=crop)
+        mask, _ = functional.prepare_img(img=mask,
+                                         crop=crop)
 
-        masked_img, dims = functional.prepare_img(
-            img=masked_img, 
-            mean=mean,
-            std=std,
-            crop=crop
-        )  
-        mask, _ = functional.prepare_img(
-            img=mask, 
-            crop=crop
-        ) 
+        masked_img = functional.normalize(img=masked_img, 
+                                          mean=self.mean,
+                                          std=self.std)
         res = []
         n_patches = len(masked_img)
-        for i in range(0, n_patches, step):
-            if i+step > n_patches:
+        for i in range(0, n_patches, self.patches_to_device):
+            if i+self.patches_to_device > n_patches:
                 tmp = masked_img[i:].to(device)
                 tmp_mask = mask[i:].to(device)
                 
@@ -300,15 +298,14 @@ class PConvNet256(nn.Module):
                     res.append(patch.cpu())
                 break
 
-            tmp = masked_img[i:i+step].to(device)
-            tmp_mask = mask[i:i+step].to(device)
+            tmp = masked_img[i:i+self.patches_to_device].to(device)
+            tmp_mask = mask[i:i+self.patches_to_device].to(device)
             for patch in self(tmp, tmp_mask):
                 res.append(patch.cpu())
         self = self.cpu()
         res = torch.stack(res)
         res = functional.cat_patches(res, dims)
         mask = functional.cat_patches(mask, dims)
-        res = functional.unnormalize(res, mean, std)
-        print(res.shape, mask.shape, user_img.shape)
+        res = functional.unnormalize(res, self.mean, self.std)
         res = user_img*mask + (1-mask)*res
         return res

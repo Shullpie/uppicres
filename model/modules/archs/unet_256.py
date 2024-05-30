@@ -56,6 +56,10 @@ class Unet256(nn.Module):
 
         self.in_channels = options.get('in_channels', None)
         self.out_channels = options.get('out_channels', None)
+        self.mean = options.get('normalize', None).get('mean')
+        self.std = options.get('normalize', None).get('std')
+        self.patches_to_device = options.get('patches_to_device', 4) 
+        self.pos_label_threshold = options.get('pos_label_threshold', 0.5)
         self.activation_func = activation_funcs.get_activation_function(options.get('activation_function', None))
 
         self.maxpool = nn.MaxPool2d(2, 2)
@@ -139,47 +143,39 @@ class Unet256(nn.Module):
     @torch.inference_mode()
     def inference(self, 
                   user_img: ImageTorch | ImagePIL, 
-                  inference_options: dict, 
+                  crop: int,
                   device: str
                   ) -> MaskTorch:
         self.eval()
         self = self.to(device)
         res = []
 
-        options = inference_options['seg']
-        crop = inference_options.get('crop', None)
-        step = inference_options.get('patches_to_device', 2)
-        pos_label_threshold = options.get('pos_label_threshold', 0.5)
-
-        mean = options.get('normalize', None).get('mean', None)
-        std = options.get('normalize', None).get('std', None)
-
         flipped_image = hflip(user_img)
 
-        user_img, dims = functional.prepare_img(
-            img=user_img, 
-            mean=mean,
-            std=std,
-            crop=crop
-        )  
-        flipped_image, _ = functional.prepare_img(
-            img=flipped_image, 
-            mean=mean,
-            std=std,
-            crop=crop
-        )    
+        user_img, dims = functional.prepare_img(img=user_img,
+                                                crop=crop)
+        
+        flipped_image, _ = functional.prepare_img(img=flipped_image,
+                                                  crop=crop)
+
+        user_img = functional.normalize(img=user_img, 
+                                        mean=self.mean, 
+                                        std=self.std)
+        flipped_image = functional.normalize(img=flipped_image, 
+                                             mean=self.mean, 
+                                             std=self.std)
         n_patches = len(user_img)
         for img in [user_img, flipped_image]:
             mask = []
-            for i in range(0, n_patches, step):
-                if i+step > n_patches:
+            for i in range(0, n_patches, self.patches_to_device):
+                if i+self.patches_to_device > n_patches:
                     tmp = img[i:].to(device)
                     
                     for patch in self(tmp):
                         mask.append(patch.cpu())
                     break
 
-                tmp = img[i:i+step].to(device)
+                tmp = img[i:i+self.patches_to_device].to(device)
                 for patch in self(tmp):
                     mask.append(patch.cpu())
             res.append(torch.stack(mask))
@@ -190,7 +186,7 @@ class Unet256(nn.Module):
         mask1 = torch.sigmoid(functional.cat_patches(mask1, dims))
         mask2 = torch.sigmoid(functional.cat_patches(mask2, dims))
         mask2 = hflip(mask2)
-
-        mask1 = mask1 > pos_label_threshold
-        mask2 = mask2 > pos_label_threshold
-        return torch.logical_or(mask1, mask2).to(torch.float32)   
+        
+        mask1 = mask1 > (self.pos_label_threshold if (dims[0] >= 2 or dims[1] >= 2) else 0.9)
+        mask2 = mask2 > (self.pos_label_threshold if (dims[0] >= 2 or dims[1] >= 2) else 0.9) 
+        return torch.logical_or(mask1, mask2).to(torch.float32)

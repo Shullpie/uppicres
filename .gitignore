@@ -6,3 +6,4 @@ venv
 **/checkpoints
 **/__pycache__
 test.ipynb
+.env

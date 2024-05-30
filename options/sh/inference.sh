@@ -1,0 +1,1 @@
+python run.py -options ./options/configs/inference_config.yml -logger_options ./options/logging/config.yml

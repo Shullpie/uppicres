@@ -13,7 +13,7 @@ seg:
   normalize:
     mean: [0.4941, 0.4605, 0.4085]
     std: [0.1446, 0.1396, 0.1307]
-  pos_label_threshold: 0.4
+  pos_label_threshold: 0.75
 
 clr: 
   normalize:
